@@ -19,6 +19,23 @@ POOL_TOKENS_OUTSTANDING_KEY = Bytes("pool_tokens_outstanding_key")
 SCALING_FACTOR = Int(10 ** 13)
 POOL_TOKEN_DEFAULT_AMOUNT = Int(10 ** 13)
 
+
+def sendToken(
+    token_key: TealType.bytes, receiver: TealType.bytes, amount: TealType.uint64
+) -> Expr:
+    return Seq(
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields(
+            {
+                TxnField.type_enum: TxnType.AssetTransfer,
+                TxnField.xfer_asset: App.globalGet(token_key),
+                TxnField.asset_receiver: receiver,
+                TxnField.asset_amount: amount,
+            }
+        ),
+        InnerTxnBuilder.Submit(),
+    )
+
 def optIn(token_key: TealType.bytes) -> Expr:
     return sendToken(token_key, Global.current_application_address(), Int(0))
 
@@ -110,9 +127,9 @@ def clear_state_program():
     return Approve()
 
 if __name__ == "__main__":
-    #with open("deposit_approval.teal", "w") as f:
-     #   compiled = compileTeal(approval_program(), mode=Mode.Application, version=6)
-      #  f.write(compiled)
+    with open("deposit_approval.teal", "w") as f:
+        compiled = compileTeal(approval_program(), mode=Mode.Application, version=6)
+        f.write(compiled)
 
     with open("deposit_clear_state.teal", "w") as f:
         compiled = compileTeal(clear_state_program(), mode=Mode.Application, version=6)
