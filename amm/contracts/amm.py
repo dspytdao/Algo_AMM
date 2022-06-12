@@ -56,6 +56,8 @@ def createPoolToken(pool_token_amount: TealType.uint64) -> Expr:
         App.globalPut(POOL_TOKENS_OUTSTANDING_KEY, Int(0)),
     )
 
+
+
 def get_setup():
     # if the amm has been set up, pool token id and outstanding value already exists
     pool_token_id = App.globalGetEx(Global.current_application_id(), POOL_TOKEN_KEY)
