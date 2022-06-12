@@ -1,22 +1,7 @@
-import os
-from dotenv import load_dotenv
 from algosdk import account
 from algosdk.future import transaction
 from algosdk.v2client import algod
 from algosdk import mnemonic
-load_dotenv()
-
-algod_address = "https://testnet-algorand.api.purestake.io/ps2"
-algod_token = os.getenv('algod_token')
-headers = {
-   "X-API-Key": algod_token,
-}
-
-# initialize an algodClient
-algod_client = algod.AlgodClient(algod_token, algod_address, headers)
-
-
-private_key = os.getenv('key')
 
 def wait_for_confirmation(client, txid):
     last_round = client.status().get("last-round")
@@ -63,8 +48,7 @@ def create_asset(client, private_key):
     txid = client.send_transaction(stxn)
     print("Signed transaction with txID: {}".format(txid))
     # Wait for the transaction to be confirmed
-    confirmed_txn = wait_for_confirmation(client, txid)  
+    response = wait_for_confirmation(client, txid)  
     print("TXID: ", txid)
-    print("Result confirmed in round: {}".format(confirmed_txn['confirmed-round']))  
-
-create_asset(algod_client, private_key)
+    print("Result confirmed in round: {}".format(response['confirmed-round']))
+    return response['asset-index']
