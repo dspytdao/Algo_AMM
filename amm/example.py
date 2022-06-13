@@ -32,7 +32,7 @@ print(f"{tokenA} and {tokenB}") """
 tokenA = 95155762
 tokenB = 95155770
 
-""" appID = createAmmApp(
+appID = createAmmApp(
     client=client,
     creator=creator,
     private_key=private_key,
@@ -40,14 +40,14 @@ tokenB = 95155770
     tokenB=tokenB,
     feeBps=30,
     minIncrement=1000,
-) """
+)
 
 #https://github.com/maks-ivanov/amm-demo/blob/main/example.py
-#print(appID)
+print(appID)
 
-appID = 95197553
+#appID = 95197553
 
-""" print("Alice is setting up and funding amm...")
+print("Alice is setting up and funding amm...")
 poolToken = setupAmmApp(
     client=client,
     appID=appID,
@@ -55,12 +55,12 @@ poolToken = setupAmmApp(
     private_key=private_key,
     tokenA=tokenA,
     tokenB=tokenB,
-) """
-#print(poolToken)
-poolToken=95197757
+)
+print(poolToken)
+#poolToken=95197757
 
-#optInToPoolToken(client, appID, creator, private_key, poolToken)
+optInToPoolToken(client, appID, creator, private_key, poolToken)
 
 print("Supplying AMM with initial token A and token B")
 
-supply(client=client, appID=appID, qA=500_000, qB=500_000, supplier=creator, private_key=private_key, tokenA=tokenA, tokenB=tokenB, poolToken=poolToken)
+#supply(client=client, appID=appID, qA=500_000, qB=500_000, supplier=creator, private_key=private_key, tokenA=tokenA, tokenB=tokenB, poolToken=poolToken)

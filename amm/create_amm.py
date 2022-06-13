@@ -228,6 +228,7 @@ def supply(
         amt=qA,
         sp=suggestedParams,
     )
+    
     tokenBTxn = transaction.AssetTransferTxn(
         sender=supplier,
         receiver=appAddr,

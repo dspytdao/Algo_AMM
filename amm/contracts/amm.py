@@ -33,6 +33,8 @@ token_b_holding = AssetHolding.balance(
 )
 
 
+# supply initial liquidity, receive pool token
+# 
 def get_supply():
     token_a_txn_index = Txn.group_index() - Int(2)
     token_b_txn_index = Txn.group_index() - Int(1)
