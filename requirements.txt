@@ -1,5 +1,5 @@
 cffi==1.15.0
-msgpack==1.0.3
+msgpack==1.0.4
 py-algorand-sdk==1.13.1
 pycparser==2.21
 pycryptodomex==3.14.1
