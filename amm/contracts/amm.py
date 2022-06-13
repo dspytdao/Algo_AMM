@@ -16,6 +16,7 @@ POOL_TOKEN_KEY = Bytes("pool_token_key")
 FEE_BPS_KEY = Bytes("fee_bps_key")
 MIN_INCREMENT_KEY = Bytes("min_increment_key")
 POOL_TOKENS_OUTSTANDING_KEY = Bytes("pool_tokens_outstanding_key")
+
 SCALING_FACTOR = Int(10 ** 13)
 POOL_TOKEN_DEFAULT_AMOUNT = Int(10 ** 13)
 
@@ -89,17 +90,17 @@ def approval_program():
     )
 
     on_setup = get_setup()
-    on_supply = get_supply()
-    on_withdraw = get_withdraw()
-    on_swap = get_swap()
+    #on_supply = get_supply()
+    #on_withdraw = get_withdraw()
+    #on_swap = get_swap()
 
-    on_call_method = Txn.application_args[0]
-    on_call = Cond(
-        [on_call_method == Bytes("setup"), on_setup],
-        [on_call_method == Bytes("supply"), on_supply],
-        [on_call_method == Bytes("withdraw"), on_withdraw],
-        [on_call_method == Bytes("swap"), on_swap],
-    )
+    #on_call_method = Txn.application_args[0]
+    #on_call = Cond(
+    #    [on_call_method == Bytes("setup"), on_setup],
+    #    [on_call_method == Bytes("supply"), on_supply],
+    #    [on_call_method == Bytes("withdraw"), on_withdraw],
+    #    [on_call_method == Bytes("swap"), on_swap],
+    #)
 
     on_delete = Seq(
         If(App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) == Int(0)).Then(
@@ -110,7 +111,7 @@ def approval_program():
 
     program = Cond(
         [Txn.application_id() == Int(0), on_create],
-        [Txn.on_completion() == OnComplete.NoOp, on_call],
+        #[Txn.on_completion() == OnComplete.NoOp, on_call],
         [Txn.on_completion() == OnComplete.DeleteApplication, on_delete],
         [
             Or(
@@ -125,7 +126,7 @@ def approval_program():
     return program
 
 
-def clear_state_program():
+def clear_program():
     return Approve()
 
 if __name__ == "__main__":
@@ -133,6 +134,6 @@ if __name__ == "__main__":
         compiled = compileTeal(approval_program(), mode=Mode.Application, version=6)
         f.write(compiled)
 
-    with open("deposit_clear_state.teal", "w") as f:
-        compiled = compileTeal(clear_state_program(), mode=Mode.Application, version=6)
+    with open("deposit_clear.teal", "w") as f:
+        compiled = compileTeal(clear_program(), mode=Mode.Application, version=6)
         f.write(compiled)
