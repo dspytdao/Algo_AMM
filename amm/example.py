@@ -3,9 +3,10 @@ from dotenv import load_dotenv
 from algosdk import account
 from algosdk.future import transaction
 from algosdk.v2client import algod
+from base64 import b64decode
 
 from create_asset import create_asset
-from create_amm import createAmmApp
+from create_amm import createAmmApp, setupAmmApp
 
 
 load_dotenv()
@@ -44,3 +45,16 @@ appID = createAmmApp(
 )
 
 #https://github.com/maks-ivanov/amm-demo/blob/main/example.py
+#print(appID)
+""" app = 95169684
+print("Alice is setting up and funding amm...")
+poolToken = setupAmmApp(
+    client=client,
+    appID=appID,
+    funder=creator,
+    private_key=private_key,
+    tokenA=tokenA,
+    tokenB=tokenB,
+)
+print(poolToken) """
+poolToken=95169708

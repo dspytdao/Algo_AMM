@@ -94,13 +94,13 @@ def approval_program():
     #on_withdraw = get_withdraw()
     #on_swap = get_swap()
 
-    #on_call_method = Txn.application_args[0]
-    #on_call = Cond(
-    #    [on_call_method == Bytes("setup"), on_setup],
+    on_call_method = Txn.application_args[0]
+    on_call = Cond(
+        [on_call_method == Bytes("setup"), on_setup],#2
     #    [on_call_method == Bytes("supply"), on_supply],
     #    [on_call_method == Bytes("withdraw"), on_withdraw],
     #    [on_call_method == Bytes("swap"), on_swap],
-    #)
+    )
 
     on_delete = Seq(
         If(App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) == Int(0)).Then(
@@ -110,8 +110,8 @@ def approval_program():
     )
 
     program = Cond(
-        [Txn.application_id() == Int(0), on_create],
-        #[Txn.on_completion() == OnComplete.NoOp, on_call],
+        [Txn.application_id() == Int(0), on_create],#1
+        [Txn.on_completion() == OnComplete.NoOp, on_call],#2
         [Txn.on_completion() == OnComplete.DeleteApplication, on_delete],
         [
             Or(
