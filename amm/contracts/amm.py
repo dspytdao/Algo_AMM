@@ -1,62 +1,10 @@
-from pyteal import Bytes, Int,\
-    TealType, Expr, \
-    Btoi, \
-    Global, App,\
-    Txn, InnerTxnBuilder, TxnField, TxnType, InnerTxn, \
-    OnComplete, Mode, \
-    Approve, Reject, Assert, \
-    Cond, If, Or, Seq, Not, \
-    compileTeal
+from pyteal import *
 
+from contracts.helpers import validateTokenReceived, mintAndSendPoolToken, tryTakeAdjustedAmounts, optIn, createPoolToken
 
-CREATOR_KEY = Bytes("creator_key")
-TOKEN_A_KEY = Bytes("token_a_key")
-TOKEN_B_KEY = Bytes("token_b_key")
-POOL_TOKEN_KEY = Bytes("pool_token_key")
-FEE_BPS_KEY = Bytes("fee_bps_key")
-MIN_INCREMENT_KEY = Bytes("min_increment_key")
-POOL_TOKENS_OUTSTANDING_KEY = Bytes("pool_tokens_outstanding_key")
-
-SCALING_FACTOR = Int(10 ** 13)
-POOL_TOKEN_DEFAULT_AMOUNT = Int(10 ** 13)
-
-
-def sendToken(
-    token_key: TealType.bytes, receiver: TealType.bytes, amount: TealType.uint64
-) -> Expr:
-    return Seq(
-        InnerTxnBuilder.Begin(),
-        InnerTxnBuilder.SetFields(
-            {
-                TxnField.type_enum: TxnType.AssetTransfer,
-                TxnField.xfer_asset: App.globalGet(token_key),
-                TxnField.asset_receiver: receiver,
-                TxnField.asset_amount: amount,
-            }
-        ),
-        InnerTxnBuilder.Submit(),
-    )
-
-def optIn(token_key: TealType.bytes) -> Expr:
-    return sendToken(token_key, Global.current_application_address(), Int(0))
-
-def createPoolToken(pool_token_amount: TealType.uint64) -> Expr:
-    return Seq(
-        InnerTxnBuilder.Begin(),
-        InnerTxnBuilder.SetFields(
-            {
-                TxnField.type_enum: TxnType.AssetConfig,
-                TxnField.config_asset_total: pool_token_amount,
-                TxnField.config_asset_default_frozen: Int(0),
-                TxnField.config_asset_decimals: Int(0),
-                TxnField.config_asset_reserve: Global.current_application_address(),
-            }
-        ),
-        InnerTxnBuilder.Submit(),
-        App.globalPut(POOL_TOKEN_KEY, InnerTxn.created_asset_id()),
-        App.globalPut(POOL_TOKENS_OUTSTANDING_KEY, Int(0)),
-    )
-
+from contracts.config import CREATOR_KEY, TOKEN_A_KEY, TOKEN_B_KEY, \
+    POOL_TOKEN_KEY, FEE_BPS_KEY, MIN_INCREMENT_KEY, \
+    POOL_TOKENS_OUTSTANDING_KEY, SCALING_FACTOR, POOL_TOKEN_DEFAULT_AMOUNT
 
 
 def get_setup():
@@ -77,6 +25,72 @@ def get_setup():
         Approve(),
     )
 
+token_a_holding = AssetHolding.balance(
+    Global.current_application_address(), App.globalGet(TOKEN_A_KEY)
+)
+token_b_holding = AssetHolding.balance(
+    Global.current_application_address(), App.globalGet(TOKEN_B_KEY)
+)
+
+
+def get_supply():
+    token_a_txn_index = Txn.group_index() - Int(2)
+    token_b_txn_index = Txn.group_index() - Int(1)
+
+    pool_token_holding = AssetHolding.balance(
+        Global.current_application_address(), App.globalGet(POOL_TOKEN_KEY)
+    )
+
+    token_a_before_txn: ScratchVar = ScratchVar(TealType.uint64)
+    token_b_before_txn: ScratchVar = ScratchVar(TealType.uint64)
+
+    on_supply = Seq(
+        pool_token_holding,
+        token_a_holding,
+        token_b_holding,
+        Assert(
+            And(
+                pool_token_holding.hasValue(),
+                pool_token_holding.value() > Int(0),
+                validateTokenReceived(token_a_txn_index, TOKEN_A_KEY),
+                validateTokenReceived(token_b_txn_index, TOKEN_B_KEY),
+                Gtxn[token_a_txn_index].asset_amount()
+                >= App.globalGet(MIN_INCREMENT_KEY),
+                Gtxn[token_b_txn_index].asset_amount()
+                >= App.globalGet(MIN_INCREMENT_KEY),
+            )
+        ),
+        token_a_before_txn.store(
+            token_a_holding.value() - Gtxn[token_a_txn_index].asset_amount()
+        ),
+        token_b_before_txn.store(
+            token_b_holding.value() - Gtxn[token_b_txn_index].asset_amount()
+        ),
+        If(
+            Or(
+                token_a_before_txn.load() == Int(0),
+                token_b_before_txn.load() == Int(0),
+            )
+        )
+        .Then(
+            # no liquidity yet, take everything
+            Seq(
+                mintAndSendPoolToken(
+                    Txn.sender(),
+                    Sqrt(
+                        Gtxn[token_a_txn_index].asset_amount()
+                        * Gtxn[token_b_txn_index].asset_amount()
+                    ),
+                ),
+                Approve(),
+            ),
+        )
+        .Else(Reject()),
+    )
+    return on_supply
+
+
+
 
 def approval_program():
     
@@ -90,14 +104,14 @@ def approval_program():
     )
 
     on_setup = get_setup()
-    #on_supply = get_supply()
+    on_supply = get_supply()
     #on_withdraw = get_withdraw()
     #on_swap = get_swap()
 
     on_call_method = Txn.application_args[0]
     on_call = Cond(
         [on_call_method == Bytes("setup"), on_setup],#2
-    #    [on_call_method == Bytes("supply"), on_supply],
+        [on_call_method == Bytes("supply"), on_supply],#3
     #    [on_call_method == Bytes("withdraw"), on_withdraw],
     #    [on_call_method == Bytes("swap"), on_swap],
     )
@@ -111,7 +125,7 @@ def approval_program():
 
     program = Cond(
         [Txn.application_id() == Int(0), on_create],#1
-        [Txn.on_completion() == OnComplete.NoOp, on_call],#2
+        [Txn.on_completion() == OnComplete.NoOp, on_call],#2, 3
         [Txn.on_completion() == OnComplete.DeleteApplication, on_delete],
         [
             Or(

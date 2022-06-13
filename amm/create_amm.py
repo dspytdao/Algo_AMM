@@ -167,10 +167,91 @@ def setupAmmApp(
     client.send_transactions([signedFundAppTxn, signedSetupTxn])
 
     waitForTransaction(client, signedFundAppTxn.get_txid())
-
-    glob_state = client.application_info(app)['params']['global-state']
+    glob_state = client.application_info(appID)['params']['global-state']
 
 
     for i in range(len(glob_state)):
         if b64decode(glob_state[i]['key']) == b"pool_token_key":
             return glob_state[i]['value']['uint']
+
+
+def optInToPoolToken(client, appID, account, private_key, poolToken):
+    suggestedParams = client.suggested_params()
+
+    optInTxn = transaction.AssetOptInTxn(
+        sender=account, index=poolToken, sp=suggestedParams
+    )
+
+    signedOptInTxn = optInTxn.sign(private_key)
+
+    client.send_transaction(signedOptInTxn)
+    waitForTransaction(client, signedOptInTxn.get_txid())
+
+
+def supply(
+    client: AlgodClient, appID: int, qA: int, qB: int, supplier, private_key, tokenA, tokenB, poolToken
+) -> None:
+    """Supply liquidity to the pool.
+    Let rA, rB denote the existing pool reserves of token A and token B respectively
+    First supplier will receive sqrt(qA*qB) tokens, subsequent suppliers will receive
+    qA/rA where rA is the amount of token A already in the pool.
+    If qA/qB != rA/rB, the pool will first attempt to take full amount qA, returning excess token B
+    Else if there is insufficient amount qB, the pool will then attempt to take the full amount qB, returning
+     excess token A
+    Else transaction will be rejected
+    Args:
+        client: AlgodClient,
+        appID: amm app id,
+        qA: amount of token A to supply the pool
+        qB: amount of token B to supply to the pool
+        supplier: supplier account
+    """
+    appAddr = get_application_address(appID)
+    suggestedParams = client.suggested_params()
+
+    #tokenA = appGlobalState[b"token_a_key"]
+    #tokenB = appGlobalState[b"token_b_key"]
+    #poolToken = getPoolTokenId(appGlobalState)
+
+    # pay for the fee incurred by AMM for sending back the pool token
+    feeTxn = transaction.PaymentTxn(
+        sender=supplier,
+        receiver=appAddr,
+        amt=2_000,
+        sp=suggestedParams,
+    )
+
+    tokenATxn = transaction.AssetTransferTxn(
+        sender=supplier,
+        receiver=appAddr,
+        index=tokenA,
+        amt=qA,
+        sp=suggestedParams,
+    )
+    tokenBTxn = transaction.AssetTransferTxn(
+        sender=supplier,
+        receiver=appAddr,
+        index=tokenB,
+        amt=qB,
+        sp=suggestedParams,
+    )
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=supplier,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"supply"],
+        foreign_assets=[tokenA, tokenB, poolToken],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, tokenATxn, tokenBTxn, appCallTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedTokenATxn = tokenATxn.sign(private_key)
+    signedTokenBTxn = tokenBTxn.sign(private_key)
+    signedAppCallTxn = appCallTxn.sign(private_key)
+
+    client.send_transactions(
+        [signedFeeTxn, signedTokenATxn, signedTokenBTxn, signedAppCallTxn]
+    )
+    waitForTransaction(client, signedAppCallTxn.get_txid())

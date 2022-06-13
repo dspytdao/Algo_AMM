@@ -6,7 +6,7 @@ from algosdk.v2client import algod
 from base64 import b64decode
 
 from create_asset import create_asset
-from create_amm import createAmmApp, setupAmmApp
+from create_amm import createAmmApp, setupAmmApp, optInToPoolToken, supply
 
 
 load_dotenv()
@@ -25,8 +25,6 @@ headers = {
 client = algod.AlgodClient(algod_token, algod_address, headers)
 
 #create 2 tokens
-# 
-
 
 """ tokenA = create_asset(client, private_key)
 tokenB = create_asset(client, private_key)
@@ -34,7 +32,7 @@ print(f"{tokenA} and {tokenB}") """
 tokenA = 95155762
 tokenB = 95155770
 
-appID = createAmmApp(
+""" appID = createAmmApp(
     client=client,
     creator=creator,
     private_key=private_key,
@@ -42,12 +40,14 @@ appID = createAmmApp(
     tokenB=tokenB,
     feeBps=30,
     minIncrement=1000,
-)
+) """
 
 #https://github.com/maks-ivanov/amm-demo/blob/main/example.py
 #print(appID)
-""" app = 95169684
-print("Alice is setting up and funding amm...")
+
+appID = 95197553
+
+""" print("Alice is setting up and funding amm...")
 poolToken = setupAmmApp(
     client=client,
     appID=appID,
@@ -55,6 +55,12 @@ poolToken = setupAmmApp(
     private_key=private_key,
     tokenA=tokenA,
     tokenB=tokenB,
-)
-print(poolToken) """
-poolToken=95169708
+) """
+#print(poolToken)
+poolToken=95197757
+
+#optInToPoolToken(client, appID, creator, private_key, poolToken)
+
+print("Supplying AMM with initial token A and token B")
+
+supply(client=client, appID=appID, qA=500_000, qB=500_000, supplier=creator, private_key=private_key, tokenA=tokenA, tokenB=tokenB, poolToken=poolToken)
