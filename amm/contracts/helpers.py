@@ -20,8 +20,8 @@ def validateTokenReceived(
     )
 
 
-def xMulYDivZ(x, y, z) -> Expr:
-    return WideRatio([x, y, SCALING_FACTOR], [z, SCALING_FACTOR])
+#def xMulYDivZ(x, y, z) -> Expr:
+#    return WideRatio([x, y, SCALING_FACTOR], [z, SCALING_FACTOR])
 
 
 def sendToken(
@@ -41,6 +41,11 @@ def sendToken(
     )
 
 
+def optIn(token_key: TealType.bytes) -> Expr:
+    return sendToken(token_key, Global.current_application_address(), Int(0))
+
+
+#create two additional tokens as well
 def createPoolToken(pool_token_amount: TealType.uint64) -> Expr:
     return Seq(
         InnerTxnBuilder.Begin(),
@@ -58,75 +63,6 @@ def createPoolToken(pool_token_amount: TealType.uint64) -> Expr:
         App.globalPut(POOL_TOKENS_OUTSTANDING_KEY, Int(0)),
     )
 
-
-def optIn(token_key: TealType.bytes) -> Expr:
-    return sendToken(token_key, Global.current_application_address(), Int(0))
-
-
-def returnRemainder(
-    token_key: TealType.bytes,
-    received_amount: TealType.uint64,
-    to_keep_amount: TealType.uint64,
-) -> Expr:
-    remainder = received_amount - to_keep_amount
-    return Seq(
-        If(remainder > Int(0)).Then(
-            sendToken(
-                token_key,
-                Txn.sender(),
-                remainder,
-            )
-        ),
-    )
-
-
-def tryTakeAdjustedAmounts(
-    to_keep_token_txn_amt: TealType.uint64,
-    to_keep_token_before_txn_amt: TealType.uint64,
-    other_token_key: TealType.bytes,
-    other_token_txn_amt: TealType.uint64,
-    other_token_before_txn_amt: TealType.uint64,
-) -> Expr:
-    """
-    Given supplied token amounts, try to keep all of one token and the corresponding amount of other token
-    as determined by market price before transaction. If corresponding amount is less than supplied, send the remainder back.
-    If successful, mint and sent pool tokens in proportion to new liquidity over old liquidity.
-    """
-    other_corresponding_amount = ScratchVar(TealType.uint64)
-
-    return Seq(
-        other_corresponding_amount.store(
-            xMulYDivZ(
-                to_keep_token_txn_amt,
-                other_token_before_txn_amt,
-                to_keep_token_before_txn_amt,
-            )
-        ),
-        If(
-            And(
-                other_corresponding_amount.load() > Int(0),
-                other_token_txn_amt >= other_corresponding_amount.load(),
-            )
-        ).Then(
-            Seq(
-                returnRemainder(
-                    other_token_key,
-                    other_token_txn_amt,
-                    other_corresponding_amount.load(),
-                ),
-                mintAndSendPoolToken(
-                    Txn.sender(),
-                    xMulYDivZ(
-                        App.globalGet(POOL_TOKENS_OUTSTANDING_KEY),
-                        to_keep_token_txn_amt,
-                        to_keep_token_before_txn_amt,
-                    ),
-                ),
-                Return(Int(1)),
-            )
-        ),
-        Return(Int(0)),
-    )
 
 
 def withdrawGivenPoolToken(
@@ -149,22 +85,10 @@ def withdrawGivenPoolToken(
             )
         ).Then(
             Seq(
-                Assert(
-                    xMulYDivZ(
-                        token_holding.value(),
-                        pool_token_amount,
-                        pool_tokens_outstanding,
-                    )
-                    > Int(0)
-                ),
                 sendToken(
                     to_withdraw_token_key,
                     receiver,
-                    xMulYDivZ(
-                        token_holding.value(),
-                        pool_token_amount,
-                        pool_tokens_outstanding,
-                    ),
+                    pool_token_amount,
                 ),
             )
         ),

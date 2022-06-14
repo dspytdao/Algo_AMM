@@ -6,7 +6,7 @@ from algosdk.v2client import algod
 from base64 import b64decode
 
 from create_asset import create_asset
-from create_amm import createAmmApp, setupAmmApp, optInToPoolToken, supply
+from create_amm import createAmmApp, setupAmmApp, optInToPoolToken, supply, withdraw
 
 
 load_dotenv()
@@ -29,23 +29,23 @@ client = algod.AlgodClient(algod_token, algod_address, headers)
 """ tokenA = create_asset(client, private_key)
 tokenB = create_asset(client, private_key)
 print(f"{tokenA} and {tokenB}") """
-tokenA = 95155762
-tokenB = 95155770
+
+token = 95155762
 
 appID = createAmmApp(
     client=client,
     creator=creator,
     private_key=private_key,
-    tokenA=tokenA,
-    tokenB=tokenB,
+    token=token,
     feeBps=30,
     minIncrement=1000,
 )
 
 #https://github.com/maks-ivanov/amm-demo/blob/main/example.py
-print(appID)
 
-#appID = 95197553
+
+#appID = 95328097
+print(appID)
 
 print("Alice is setting up and funding amm...")
 poolToken = setupAmmApp(
@@ -53,14 +53,24 @@ poolToken = setupAmmApp(
     appID=appID,
     funder=creator,
     private_key=private_key,
-    tokenA=tokenA,
-    tokenB=tokenB,
+    token=token,
 )
+
+
+#poolToken=95328119
 print(poolToken)
-#poolToken=95197757
 
 optInToPoolToken(client, appID, creator, private_key, poolToken)
 
-print("Supplying AMM with initial token A and token B")
+print("Supplying AMM with initial token")
 
-#supply(client=client, appID=appID, qA=500_000, qB=500_000, supplier=creator, private_key=private_key, tokenA=tokenA, tokenB=tokenB, poolToken=poolToken)
+poolTokenFirstAmount = 500_000
+
+supply(client=client, appID=appID, q=poolTokenFirstAmount, supplier=creator, private_key=private_key, token=token, poolToken=poolToken)
+
+withdraw(
+    client = client,
+    appID = appID,
+    poolTokenAmount = poolTokenFirstAmount, poolToken = poolToken,
+    withdrawAccount = creator, private_key = private_key, token = token
+)
