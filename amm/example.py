@@ -127,8 +127,8 @@ swap(
 )
 
 #####
-# withdraw for yes/no
-# pool
+# redemption for for yes/no
+# pool, reaching the deadline
 ####
 #withdraw(
 #    client = client,
