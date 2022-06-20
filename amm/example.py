@@ -1,12 +1,11 @@
 import os
 from dotenv import load_dotenv
 from algosdk import account
-from algosdk.future import transaction
 from algosdk.v2client import algod
-from base64 import b64decode
 
 from create_asset import create_asset
-from create_amm import createAmmApp, setupAmmApp, optInToPoolToken, supply, withdraw
+from amm_api import createAmmApp, setupAmmApp, optInToPoolToken, \
+    supply, withdraw, swap
 
 
 load_dotenv()
@@ -24,13 +23,9 @@ headers = {
 # initialize an algodClient
 client = algod.AlgodClient(algod_token, algod_address, headers)
 
-#create 2 tokens
+token = create_asset(client, private_key)
 
-""" tokenA = create_asset(client, private_key)
-tokenB = create_asset(client, private_key)
-print(f"{tokenA} and {tokenB}") """
-
-token = 95155762
+#token = 95155762
 
 appID = createAmmApp(
     client=client,
@@ -44,11 +39,11 @@ appID = createAmmApp(
 #https://github.com/maks-ivanov/amm-demo/blob/main/example.py
 
 
-#appID = 95328097
+#appID = 95373550
 print(appID)
 
 print("Alice is setting up and funding amm...")
-poolToken = setupAmmApp(
+Tokens = setupAmmApp(
     client=client,
     appID=appID,
     funder=creator,
@@ -56,21 +51,89 @@ poolToken = setupAmmApp(
     token=token,
 )
 
+poolToken = Tokens['pool_token_key']
+yesToken = Tokens['yes_token_key']
+noToken = Tokens['no_token_key']
 
-#poolToken=95328119
-print(poolToken)
+print(Tokens['pool_token_key'], Tokens['yes_token_key'], Tokens['no_token_key'])
 
-optInToPoolToken(client, appID, creator, private_key, poolToken)
+optInToPoolToken(client, creator, private_key, poolToken)
+optInToPoolToken(client, creator, private_key, yesToken)
+optInToPoolToken(client, creator, private_key, noToken)
+
 
 print("Supplying AMM with initial token")
 
 poolTokenFirstAmount = 500_000
 
-supply(client=client, appID=appID, q=poolTokenFirstAmount, supplier=creator, private_key=private_key, token=token, poolToken=poolToken)
-
-withdraw(
-    client = client,
-    appID = appID,
-    poolTokenAmount = poolTokenFirstAmount, poolToken = poolToken,
-    withdrawAccount = creator, private_key = private_key, token = token
+supply(
+    client=client, 
+    appID=appID, 
+    q=poolTokenFirstAmount, 
+    supplier=creator, 
+    private_key=private_key, 
+    token=token, 
+    poolToken=poolToken,
+    yesToken=yesToken, noToken=noToken
 )
+
+print("Supplying AMM with initial token")
+
+poolTokenSecondAmount = 1_500_000
+
+supply(
+    client=client, 
+    appID=appID, 
+    q=poolTokenSecondAmount, 
+    supplier=creator, 
+    private_key=private_key, 
+    token=token, 
+    poolToken=poolToken,
+    yesToken=yesToken, noToken=noToken
+)
+
+yesTokenAmount = 100_000
+
+#########
+# add percentage of pool with trading fee
+#########
+#implement buy_yes
+# buy no
+########
+# buy yes token
+swap(
+    client=client, 
+    appID=appID, 
+    q=yesTokenAmount, 
+    supplier=creator, 
+    private_key=private_key, 
+    token=token, 
+    poolToken=poolToken,
+    yesToken=yesToken, 
+    noToken=noToken
+)
+
+#buy no token
+swap(
+    client=client, 
+    appID=appID, 
+    q=yesTokenAmount, 
+    supplier=creator, 
+    private_key=private_key, 
+    token=token, 
+    #poolToken=poolToken,
+    #yesToken=yesToken, 
+    noToken=noToken
+)
+
+#####
+# withdraw for yes/no
+# pool
+####
+#withdraw(
+#    client = client,
+#    appID = appID,
+#    poolTokenAmount = poolTokenFirstAmount, poolToken = poolToken,
+#    withdrawAccount = creator, private_key = private_key, token = token
+#)
+
