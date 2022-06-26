@@ -23,9 +23,8 @@ headers = {
 # initialize an algodClient
 client = algod.AlgodClient(algod_token, algod_address, headers)
 
+#create (stable) asset
 token = create_asset(client, private_key)
-
-#token = 95155762
 
 appID = createAmmApp(
     client=client,
@@ -36,13 +35,8 @@ appID = createAmmApp(
     minIncrement=1000,
 )
 
-#https://github.com/maks-ivanov/amm-demo/blob/main/example.py
+print(f"Alice is setting up and funding amm {appID}")
 
-
-#appID = 95373550
-print(appID)
-
-print("Alice is setting up and funding amm...")
 Tokens = setupAmmApp(
     client=client,
     appID=appID,
@@ -77,7 +71,7 @@ supply(
     yesToken=yesToken, noToken=noToken
 )
 
-print("Supplying AMM with initial token")
+print("Supplying AMM with more tokens")
 
 poolTokenSecondAmount = 1_500_000
 
@@ -94,20 +88,15 @@ supply(
 
 yesTokenAmount = 100_000
 
-#########
-# add percentage of pool with trading fee
-#########
-#implement buy_yes
-# buy no
-########
 # buy yes token
 swap(
     client=client, 
-    appID=appID, 
+    appID=appID,
+    option="yes",
     q=yesTokenAmount, 
     supplier=creator, 
     private_key=private_key, 
-    token=token, 
+    token=token,
     poolToken=poolToken,
     yesToken=yesToken, 
     noToken=noToken
@@ -117,12 +106,13 @@ swap(
 swap(
     client=client, 
     appID=appID, 
+    option="no",
     q=yesTokenAmount, 
     supplier=creator, 
     private_key=private_key, 
     token=token, 
-    #poolToken=poolToken,
-    #yesToken=yesToken, 
+    poolToken=poolToken,
+    yesToken=yesToken,
     noToken=noToken
 )
 

@@ -1,7 +1,5 @@
 from algosdk import account
 from algosdk.future import transaction
-from algosdk.v2client import algod
-from algosdk import mnemonic
 
 def wait_for_confirmation(client, txid):
     last_round = client.status().get("last-round")

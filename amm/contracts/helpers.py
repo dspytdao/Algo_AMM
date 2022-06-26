@@ -4,7 +4,8 @@ from contracts.config import (
     POOL_TOKENS_OUTSTANDING_KEY, POOL_TOKEN_KEY,
     YES_TOKEN_KEY, YES_TOKENS_OUTSTANDING_KEY,
     NO_TOKEN_KEY, NO_TOKENS_OUTSTANDING_KEY,
-    NO_TOKENS_RESERVES, YES_TOKENS_RESERVES
+    NO_TOKENS_RESERVES, YES_TOKENS_RESERVES,
+    FEE_BPS_KEY
 )
 
 
@@ -154,7 +155,7 @@ def mintAndSendNoToken(receiver: TealType.bytes, amount: TealType.uint64) -> Exp
     tokensOut: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokensOut.store(
-            App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount)
+            App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount ) * (Int(10000) - App.globalGet(FEE_BPS_KEY)) / Int(10000)
         ),
         App.globalPut(NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
         App.globalPut(NO_TOKENS_RESERVES, App.globalGet(NO_TOKENS_RESERVES) - tokensOut.load()),
@@ -166,7 +167,7 @@ def mintAndSendYesToken(receiver: TealType.bytes, amount: TealType.uint64) -> Ex
     tokensOut: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokensOut.store(
-            App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES)+amount)
+            (App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount )) * (Int(10000) - App.globalGet(FEE_BPS_KEY)) / Int(10000)
         ),
         App.globalPut(YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
         App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - tokensOut.load()),

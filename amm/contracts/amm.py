@@ -26,11 +26,8 @@ def get_setup():
         Approve(),
     )
 
-#token_funding_holding = AssetHolding.balance(
-#    Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
-#)
-
 # supply initial liquidity, receive pool token
+# add conditions
 def get_supply():
     token_txn_index = Txn.group_index() - Int(1)
 
@@ -40,6 +37,7 @@ def get_supply():
                 validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
                 Gtxn[token_txn_index].asset_amount()
                 >= App.globalGet(MIN_INCREMENT_KEY),
+
            )
         ),
         mintAndSendPoolToken(
@@ -91,17 +89,14 @@ def get_swap():
 
 
 def get_withdraw():
+
     pool_token_txn_index = Txn.group_index() - Int(1)
     on_withdraw = Seq(
-        #token_funding_holding,
         Assert(
-            And(
-                #token_funding_holding.hasValue(),
-                #token_funding_holding.value() > Int(0),
-                validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
-            )
+            validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
         ),
-        If(Gtxn[pool_token_txn_index].asset_amount() > Int(0)).Then(
+        If(Gtxn[pool_token_txn_index].asset_amount() > Int(0))
+        .Then(
             Seq(
                 withdrawGivenPoolToken(
                     Txn.sender(),
@@ -126,6 +121,7 @@ def get_withdraw():
 def approval_program():
     
     on_create = Seq(
+        Assert(Btoi(Txn.application_args[2]) < Int(10000)),
         App.globalPut(CREATOR_KEY, Txn.application_args[0]),
         App.globalPut(TOKEN_FUNDING_KEY, Btoi(Txn.application_args[1])),
         App.globalPut(FEE_BPS_KEY, Btoi(Txn.application_args[2])),

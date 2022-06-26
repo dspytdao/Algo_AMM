@@ -1,5 +1,7 @@
 # Algo_AMM
 
+## Overview
+
 ## Installing with Virtual environment
 
 ```bash
@@ -15,7 +17,7 @@ pip install -r requirements.txt
 
 [Py-algorand-sdk](https://py-algorand-sdk.readthedocs.io/en/latest/index.html)
 
-[Explorer](https://testnet.algoexplorer.io/address/)
+[AlgoExplorer](https://testnet.algoexplorer.io/address/)
 
 [Algorand: Build with Python](https://developer.algorand.org/docs/get-started/dapps/pyteal/)
 

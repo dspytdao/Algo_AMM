@@ -239,8 +239,15 @@ def supply(
     waitForTransaction(client, signedAppCallTxn.get_txid())
 
 
-def swap(client: AlgodClient, appID: int, q: int, supplier, private_key, \
-    token, poolToken, yesToken, noToken):
+def swap(client: AlgodClient, appID: int, option: str, q: int, supplier, \
+    private_key, token, poolToken, yesToken, noToken):
+
+    if option == 'yes':
+        second_argument = b"buy_yes"
+    elif option =='no':
+        second_argument = b"buy_no"
+    else:
+        return
 
     appAddr = get_application_address(appID)
     suggestedParams = client.suggested_params()
@@ -261,14 +268,11 @@ def swap(client: AlgodClient, appID: int, q: int, supplier, private_key, \
         sp=suggestedParams,
     )
 
-
-    #if 
-
     appCallTxn = transaction.ApplicationCallTxn(
         sender=supplier,
         index=appID,
         on_complete=transaction.OnComplete.NoOpOC,
-        app_args=[ b"swap", b"buy_yes"],
+        app_args=[ b"swap", second_argument],
         foreign_assets=[token, poolToken, yesToken, noToken],
         sp=suggestedParams,
     )
