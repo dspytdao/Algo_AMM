@@ -4,7 +4,7 @@ from contracts.config import (
     POOL_TOKENS_OUTSTANDING_KEY, POOL_TOKEN_KEY, POOL_FUNDING_RESERVES,
     YES_TOKEN_KEY, YES_TOKENS_OUTSTANDING_KEY, YES_TOKENS_RESERVES,
     NO_TOKEN_KEY, NO_TOKENS_OUTSTANDING_KEY, NO_TOKENS_RESERVES,
-    TOKEN_FUNDING_KEY, TOKEN_FUNDING_RESERVES
+    TOKEN_FUNDING_KEY, TOKEN_FUNDING_RESERVES, RESULT
 )
 
 
@@ -182,13 +182,12 @@ def mintAndSendYesToken(receiver: TealType.bytes, amount: TealType.uint64) -> Ex
 
 def withdrawLPToken(
     receiver: TealType.bytes,
-    to_withdraw_token_key: TealType.bytes,
     pool_token_amount: TealType.uint64,
 ) -> Expr:
     
     return Seq(
         sendToken(
-            to_withdraw_token_key,
+            TOKEN_FUNDING_KEY,
             receiver,
             App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY), 
         ),
@@ -198,5 +197,24 @@ def withdrawLPToken(
         App.globalPut(
             POOL_TOKENS_OUTSTANDING_KEY,
             App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) - pool_token_amount,
+        ),
+    )
+
+def redeemToken(
+    receiver: TealType.bytes,
+    result_token_amount: TealType.uint64,
+) -> Expr:
+    
+    return Seq(
+        sendToken(
+            TOKEN_FUNDING_KEY,
+            receiver,
+            result_token_amount * Int(2)
+        ),
+        App.globalPut(
+            TOKEN_FUNDING_RESERVES, App.globalGet(TOKEN_FUNDING_RESERVES) - result_token_amount * Int(2)
+        ),
+        App.globalPut(
+            YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) - result_token_amount
         ),
     )

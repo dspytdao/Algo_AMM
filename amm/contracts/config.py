@@ -2,6 +2,8 @@ from pyteal import Bytes, Int
 
 CREATOR_KEY = Bytes("creator_key")
 
+RESULT = Bytes("result")
+
 TOKEN_FUNDING_KEY = Bytes("token_funding_key")
 TOKEN_FUNDING_RESERVES = Bytes("token_funding_reserves")
 

@@ -5,7 +5,7 @@ from algosdk.v2client import algod
 
 from create_asset import create_asset
 from amm_api import createAmmApp, setupAmmApp, optInToPoolToken, \
-    supply, withdraw, swap
+    supply, withdraw, swap, set_result, closeAmm, redeem
 
 
 load_dotenv()
@@ -31,7 +31,6 @@ appID = createAmmApp(
     creator=creator,
     private_key=private_key,
     token=token,
-    feeBps=30,
     minIncrement=1000,
 )
 
@@ -122,8 +121,8 @@ print("Withdrawing")
 
 AllTokens = 2_000_000
 #####
-# redemption for for yes/no
-# pool, reaching the deadline
+
+# pool
 ####
 withdraw(
     client = client,
@@ -132,3 +131,39 @@ withdraw(
     withdrawAccount = creator, private_key = private_key, token = token
 )
 
+print("Result")
+#set winner
+
+set_result(
+    client = client,
+    appID = appID,
+    second_argument=b"yes",
+    funder=creator,
+    private_key = private_key
+)
+
+
+# redemption for for yes/no
+
+print("Redeeming")
+
+YesTokensAmount = 95_238
+
+redeem(
+    client = client,
+    appID = appID,
+    TokenAmount = YesTokensAmount,
+    Token = yesToken,
+    withdrawAccount = creator, private_key = private_key, token = token
+)
+
+# Delete
+
+""" print("Deleting")
+
+closeAmm(
+    client = client,
+    appID = appID,
+    closer=creator,
+    private_key = private_key
+) """

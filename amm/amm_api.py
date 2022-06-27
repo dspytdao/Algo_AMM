@@ -1,4 +1,5 @@
-from typing import List, Tuple, Dict, Any, Optional, Union
+from email.headerregistry import Address
+from typing import Tuple 
 from base64 import b64decode
 
 from pyteal import compileTeal, Mode, Expr
@@ -15,6 +16,7 @@ MIN_BALANCE_REQUIREMENT = (
     110_000
     # additional min balance for 4 assets
     + 100_000 * 4
+    #0.51
 )
 
 def waitForTransaction(
@@ -64,7 +66,6 @@ def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
 def createAmmApp(
     client: AlgodClient,
     token: int,
-    feeBps: int,
     minIncrement: int,
     creator, private_key
 ) -> int:
@@ -73,20 +74,18 @@ def createAmmApp(
         client: An algod client.
         creator: The account that will create the amm application.
         token: The id of token A in the liquidity pool,
-        feeBps: The basis point fee to be charged per swap
     Returns:
         The ID of the newly created amm app.
     """
     approval, clear = getContracts(client)
 
     # tokenA, tokenB, poolToken, fee
-    globalSchema = transaction.StateSchema(num_uints=12, num_byte_slices=1)
+    globalSchema = transaction.StateSchema(num_uints=13, num_byte_slices=1)
     localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
     app_args = [
         encoding.decode_address(creator),
         token.to_bytes(8, "big"),
-        #feeBps.to_bytes(8, "big"),
         minIncrement.to_bytes(8, "big"),
     ]
 
@@ -292,7 +291,7 @@ def withdraw(
     client: AlgodClient, appID: int, poolToken:int, poolTokenAmount: int, withdrawAccount, token, private_key
 ) -> None:
     """Withdraw liquidity  + rewards from the pool back to supplier.
-    Supplier should receive tokenA, tokenB + fees proportional to the liquidity share in the pool they choose to withdraw.
+    Supplier should receive stablecoin + fees proportional to the liquidity share in the pool they choose to withdraw.
     Args:
         client: AlgodClient,
         appID: amm app id,
@@ -335,3 +334,105 @@ def withdraw(
 
     client.send_transactions([signedFeeTxn, signedPoolTokenTxn, signedAppCallTxn])
     waitForTransaction(client, signedAppCallTxn.get_txid())
+
+
+def redeem(
+    client: AlgodClient, appID: int, Token:int, TokenAmount: int, withdrawAccount, token, private_key
+) -> None:
+    """
+    Withdraw liquidity  + rewards from the pool back to supplier.
+    Supplier should receive stablecoin + fees proportional to the liquidity share in the pool they choose to withdraw.
+    Args:
+        client: AlgodClient,
+        appID: amm app id,
+        poolTokenAmount: pool token quantity,
+        withdrawAccount: supplier account,
+    """
+    appAddr = get_application_address(appID)
+    suggestedParams = client.suggested_params()
+
+    # pay for the fee incurred by AMM for sending back tokens A and B
+    feeTxn = transaction.PaymentTxn(
+        sender=withdrawAccount,
+        receiver=appAddr,
+        amt=2_000,
+        sp=suggestedParams,
+    )
+
+
+    TokenTxn = transaction.AssetTransferTxn(
+        sender=withdrawAccount,
+        receiver=appAddr,
+        index=Token,
+        amt=TokenAmount,
+        sp=suggestedParams,
+    )
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=withdrawAccount,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"redeem"],
+        foreign_assets=[token, Token],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, TokenTxn, appCallTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedPoolTokenTxn = TokenTxn.sign(private_key)
+    signedAppCallTxn = appCallTxn.sign(private_key)
+
+    client.send_transactions([signedFeeTxn, signedPoolTokenTxn, signedAppCallTxn])
+    waitForTransaction(client, signedAppCallTxn.get_txid())
+
+
+def set_result(
+    client: AlgodClient,
+    appID: int,
+    second_argument,
+    funder, private_key):    
+    appAddr = get_application_address(appID)
+
+    suggestedParams = client.suggested_params()
+
+    feeTxn = transaction.PaymentTxn(
+        sender=funder,
+        receiver=appAddr,
+        amt=2_000,
+        sp=suggestedParams,
+    )
+
+    callTxn = transaction.ApplicationCallTxn(
+        sender=funder,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"result", second_argument],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, callTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedAppCallTxn = callTxn.sign(private_key)
+
+    client.send_transactions([signedFeeTxn, signedAppCallTxn])
+    waitForTransaction(client, signedAppCallTxn.get_txid())
+
+
+def closeAmm(client: AlgodClient, appID: int, closer, private_key):
+    """Close an amm.
+    Args:
+        client: An Algod client.
+        appID: The app ID of the amm.
+        closer: closer account. Must be the original creator of the pool.
+    """
+
+    deleteTxn = transaction.ApplicationDeleteTxn(
+        sender=closer,
+        index=appID,
+        sp=client.suggested_params(),
+    )
+    signedDeleteTxn = deleteTxn.sign(private_key)
+
+    client.send_transaction(signedDeleteTxn)
+
+    waitForTransaction(client, signedDeleteTxn.get_txid())

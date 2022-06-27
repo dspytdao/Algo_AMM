@@ -1,15 +1,20 @@
 from pyteal import *
 
-from contracts.helpers import validateTokenReceived, mintAndSendPoolToken,\
-                                mintAndSendNoToken, mintAndSendYesToken,\
-                                optIn, createPoolToken, withdrawLPToken,\
-                                createNoToken, createYesToken\
+from contracts.helpers import (
+    validateTokenReceived, mintAndSendPoolToken,
+    mintAndSendNoToken, mintAndSendYesToken,
+    optIn, createPoolToken, withdrawLPToken,
+    createNoToken, createYesToken, redeemToken
+    )
 
-from contracts.config import CREATOR_KEY, TOKEN_FUNDING_KEY, \
-    POOL_TOKEN_KEY, MIN_INCREMENT_KEY, \
-    POOL_TOKENS_OUTSTANDING_KEY, TOKEN_DEFAULT_AMOUNT, \
-    YES_TOKEN_KEY, NO_TOKEN_KEY, \
-    TOKEN_FUNDING_RESERVES, POOL_FUNDING_RESERVES
+from contracts.config import (
+    CREATOR_KEY, TOKEN_FUNDING_KEY,
+    POOL_TOKEN_KEY, MIN_INCREMENT_KEY,
+    POOL_TOKENS_OUTSTANDING_KEY, TOKEN_DEFAULT_AMOUNT,
+    YES_TOKEN_KEY, NO_TOKEN_KEY,
+    TOKEN_FUNDING_RESERVES, POOL_FUNDING_RESERVES,
+    RESULT
+)
 
 
 def get_setup():
@@ -91,7 +96,6 @@ def get_withdraw():
         ),
         withdrawLPToken(
             Txn.sender(),
-            TOKEN_FUNDING_KEY,
             Gtxn[pool_token_txn_index].asset_amount(),
         ),
         Approve(),
@@ -100,58 +104,92 @@ def get_withdraw():
     return on_withdraw
 
 
-""" def get_reedem():
+def get_result():
+    result = Txn.application_args[1]
+    on_result = Seq(
+        Assert(
+            Txn.sender() == App.globalGet(CREATOR_KEY)
+        ),
 
-    pool_token_txn_index = Txn.group_index() - Int(1)
+        If(result == Bytes("yes"))
+        .Then(
+            Seq(
+                App.globalPut(RESULT, App.globalGet(YES_TOKEN_KEY)),
+                Approve()
+            )
+        )
+        .ElseIf(
+                result == Bytes("no"),
+            )
+        .Then(
+            Seq(
+                App.globalPut(RESULT, App.globalGet(NO_TOKEN_KEY)),
+                Approve()
+            )
+        ),
+        Reject(),
+    )
+
+    return on_result
+
+
+def get_redemption():
+
+    token_txn_index = Txn.group_index() - Int(1)
     on_withdraw = Seq(
         Assert(
             And(
-                validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
-                Gtxn[pool_token_txn_index].asset_amount() > Int(0),
+                validateTokenReceived(token_txn_index, RESULT),
             )
         ),
-        withdrawLPToken(
+        redeemToken(
             Txn.sender(),
-            TOKEN_FUNDING_KEY,
-            Gtxn[pool_token_txn_index].asset_amount(),
+            Gtxn[token_txn_index].asset_amount(),
         ),
         Approve(),
     )
 
-    return on_withdraw """
+    return on_withdraw
 
 
 def approval_program():
     
     on_create = Seq(
-        Assert(Btoi(Txn.application_args[2]) < Int(10000)),
         App.globalPut(CREATOR_KEY, Txn.application_args[0]),
         App.globalPut(TOKEN_FUNDING_KEY, Btoi(Txn.application_args[1])),
         App.globalPut(TOKEN_FUNDING_RESERVES, Int(0)),
         App.globalPut(POOL_FUNDING_RESERVES, Int(0)),
-        #App.globalPut(FEE_BPS_KEY, Btoi(Txn.application_args[2])),
         App.globalPut(MIN_INCREMENT_KEY, Btoi(Txn.application_args[2])),
+        App.globalPut(RESULT, Int(0)),
         Approve(),
     )
 
     on_setup = get_setup()
     on_supply = get_supply()
-    on_withdraw = get_withdraw()
     on_swap = get_swap()
+    on_withdraw = get_withdraw()
+    on_redemption = get_redemption()
+    on_result = get_result()
+    
 
     on_call_method = Txn.application_args[0]
     on_call = Cond(
         [on_call_method == Bytes("setup"), on_setup],#2
         [on_call_method == Bytes("supply"), on_supply],#3
-        [on_call_method == Bytes("withdraw"), on_withdraw],#4
+        [on_call_method == Bytes("withdraw"), on_withdraw],#
+        [on_call_method == Bytes("redeem"), on_redemption],#
+        [on_call_method == Bytes("result"), on_result],
         [on_call_method == Bytes("swap"), on_swap],#4
     )
 
     on_delete = Seq(
-        If(App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) == Int(0)).Then(
-            Seq(Assert(Txn.sender() == App.globalGet(CREATOR_KEY)), Approve())
+        Assert(
+            And(
+                Txn.sender() == App.globalGet(CREATOR_KEY),
+                App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) == Int(0),
+            ),
         ),
-        Reject(),
+        Approve(),
     )
 
     program = Cond(
