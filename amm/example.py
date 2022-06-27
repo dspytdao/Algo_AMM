@@ -63,7 +63,7 @@ poolTokenFirstAmount = 500_000
 supply(
     client=client, 
     appID=appID, 
-    q=poolTokenFirstAmount, 
+    q=poolTokenFirstAmount,
     supplier=creator, 
     private_key=private_key, 
     token=token, 
@@ -78,13 +78,15 @@ poolTokenSecondAmount = 1_500_000
 supply(
     client=client, 
     appID=appID, 
-    q=poolTokenSecondAmount, 
+    q=poolTokenSecondAmount,
     supplier=creator, 
     private_key=private_key, 
     token=token, 
     poolToken=poolToken,
     yesToken=yesToken, noToken=noToken
 )
+
+print("Swapping")
 
 yesTokenAmount = 100_000
 
@@ -116,14 +118,17 @@ swap(
     noToken=noToken
 )
 
+print("Withdrawing")
+
+AllTokens = 2_000_000
 #####
 # redemption for for yes/no
 # pool, reaching the deadline
 ####
-#withdraw(
-#    client = client,
-#    appID = appID,
-#    poolTokenAmount = poolTokenFirstAmount, poolToken = poolToken,
-#    withdrawAccount = creator, private_key = private_key, token = token
-#)
+withdraw(
+    client = client,
+    appID = appID,
+    poolTokenAmount = AllTokens, poolToken = poolToken,
+    withdrawAccount = creator, private_key = private_key, token = token
+)
 

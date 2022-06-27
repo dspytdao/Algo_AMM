@@ -2,17 +2,15 @@ from pyteal import *
 
 from contracts.helpers import validateTokenReceived, mintAndSendPoolToken,\
                                 mintAndSendNoToken, mintAndSendYesToken,\
-                                optIn, createPoolToken, withdrawGivenPoolToken,\
-                                createNoToken, createYesToken,\
-                                AddNoToken, AddYesToken
+                                optIn, createPoolToken, withdrawLPToken,\
+                                createNoToken, createYesToken\
 
 from contracts.config import CREATOR_KEY, TOKEN_FUNDING_KEY, \
-    POOL_TOKEN_KEY, FEE_BPS_KEY, MIN_INCREMENT_KEY, \
+    POOL_TOKEN_KEY, MIN_INCREMENT_KEY, \
     POOL_TOKENS_OUTSTANDING_KEY, TOKEN_DEFAULT_AMOUNT, \
-    YES_TOKEN_KEY, YES_TOKENS_OUTSTANDING_KEY, \
-    NO_TOKEN_KEY, NO_TOKENS_OUTSTANDING_KEY
+    YES_TOKEN_KEY, NO_TOKEN_KEY, \
+    TOKEN_FUNDING_RESERVES, POOL_FUNDING_RESERVES
 
-# the ratio of tokens reserves is always 50/50, else 0
 
 def get_setup():
 
@@ -26,8 +24,7 @@ def get_setup():
         Approve(),
     )
 
-# supply initial liquidity, receive pool token
-# add conditions
+# supply liquidity, receive pool token
 def get_supply():
     token_txn_index = Txn.group_index() - Int(1)
 
@@ -37,18 +34,11 @@ def get_supply():
                 validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
                 Gtxn[token_txn_index].asset_amount()
                 >= App.globalGet(MIN_INCREMENT_KEY),
-
            )
         ),
         mintAndSendPoolToken(
             Txn.sender(),
             Gtxn[token_txn_index].asset_amount(),
-        ),
-        AddNoToken( 
-            Gtxn[token_txn_index].asset_amount() / Int(2)
-        ),
-        AddYesToken( 
-            Gtxn[token_txn_index].asset_amount() / Int(2)
         ),
         Approve(),
     )
@@ -56,12 +46,14 @@ def get_supply():
 
 
 def get_swap():
-    # add swaping fee
     token_txn_index = Txn.group_index() - Int(1)
 
-    on_call_method = Txn.application_args[1]  
+    option = Txn.application_args[1]  
     on_swap = Seq(
-        If(on_call_method == Bytes("buy_yes"))
+        Assert(
+            validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
+        ),
+        If(option == Bytes("buy_yes"))
         .Then(
             Seq(
                 mintAndSendYesToken(
@@ -71,7 +63,7 @@ def get_swap():
                 Approve()
             ),
         )
-        .ElseIf(on_call_method == Bytes("buy_no"))
+        .ElseIf(option == Bytes("buy_no"))
         .Then(
             Seq(
                 mintAndSendNoToken(
@@ -84,7 +76,6 @@ def get_swap():
         Reject()
         )
 
-        # check correct stable, token
     return on_swap
 
 
@@ -93,29 +84,41 @@ def get_withdraw():
     pool_token_txn_index = Txn.group_index() - Int(1)
     on_withdraw = Seq(
         Assert(
-            validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
+            And(
+                validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
+                Gtxn[pool_token_txn_index].asset_amount() > Int(0),
+            )
         ),
-        If(Gtxn[pool_token_txn_index].asset_amount() > Int(0))
-        .Then(
-            Seq(
-                withdrawGivenPoolToken(
-                    Txn.sender(),
-                    TOKEN_FUNDING_KEY,
-                    Gtxn[pool_token_txn_index].asset_amount(),
-                    App.globalGet(POOL_TOKENS_OUTSTANDING_KEY),
-                ),
-                App.globalPut(
-                    POOL_TOKENS_OUTSTANDING_KEY,
-                    App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)
-                    - Gtxn[pool_token_txn_index].asset_amount(),
-                ),
-                Approve(),
-            ),
+        withdrawLPToken(
+            Txn.sender(),
+            TOKEN_FUNDING_KEY,
+            Gtxn[pool_token_txn_index].asset_amount(),
         ),
-        Reject(),
+        Approve(),
     )
 
     return on_withdraw
+
+
+""" def get_reedem():
+
+    pool_token_txn_index = Txn.group_index() - Int(1)
+    on_withdraw = Seq(
+        Assert(
+            And(
+                validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
+                Gtxn[pool_token_txn_index].asset_amount() > Int(0),
+            )
+        ),
+        withdrawLPToken(
+            Txn.sender(),
+            TOKEN_FUNDING_KEY,
+            Gtxn[pool_token_txn_index].asset_amount(),
+        ),
+        Approve(),
+    )
+
+    return on_withdraw """
 
 
 def approval_program():
@@ -124,8 +127,10 @@ def approval_program():
         Assert(Btoi(Txn.application_args[2]) < Int(10000)),
         App.globalPut(CREATOR_KEY, Txn.application_args[0]),
         App.globalPut(TOKEN_FUNDING_KEY, Btoi(Txn.application_args[1])),
-        App.globalPut(FEE_BPS_KEY, Btoi(Txn.application_args[2])),
-        App.globalPut(MIN_INCREMENT_KEY, Btoi(Txn.application_args[3])),
+        App.globalPut(TOKEN_FUNDING_RESERVES, Int(0)),
+        App.globalPut(POOL_FUNDING_RESERVES, Int(0)),
+        #App.globalPut(FEE_BPS_KEY, Btoi(Txn.application_args[2])),
+        App.globalPut(MIN_INCREMENT_KEY, Btoi(Txn.application_args[2])),
         Approve(),
     )
 

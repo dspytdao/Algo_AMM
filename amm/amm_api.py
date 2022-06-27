@@ -80,13 +80,13 @@ def createAmmApp(
     approval, clear = getContracts(client)
 
     # tokenA, tokenB, poolToken, fee
-    globalSchema = transaction.StateSchema(num_uints=11, num_byte_slices=1)
+    globalSchema = transaction.StateSchema(num_uints=12, num_byte_slices=1)
     localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
     app_args = [
         encoding.decode_address(creator),
         token.to_bytes(8, "big"),
-        feeBps.to_bytes(8, "big"),
+        #feeBps.to_bytes(8, "big"),
         minIncrement.to_bytes(8, "big"),
     ]
 
