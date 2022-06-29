@@ -1,4 +1,4 @@
-from email.headerregistry import Address
+import json
 from typing import Tuple 
 from base64 import b64decode
 
@@ -16,12 +16,13 @@ MIN_BALANCE_REQUIREMENT = (
     110_000
     # additional min balance for 4 assets
     + 100_000 * 4
-    #0.51
 )
+
 
 def waitForTransaction(
     client: AlgodClient, txID: str, timeout: int = 10
-):
+) -> json:
+
     lastStatus = client.status()
     lastRound = lastStatus["last-round"]
     startRound = lastRound
@@ -44,10 +45,15 @@ def waitForTransaction(
     )
 
 
-def fullyCompileContract(client: AlgodClient, contract: Expr) -> bytes:
+def fullyCompileContract(
+    client: AlgodClient, contract: Expr
+) -> bytes:
+    
     teal = compileTeal(contract, mode=Mode.Application, version=6)
     response = client.compile(teal)
+
     return b64decode(response["result"])
+
 
 def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
     """Get the compiled TEAL contracts for the amm.
@@ -62,6 +68,7 @@ def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
     CLEAR_STATE_PROGRAM = fullyCompileContract(client, clear_program())
 
     return APPROVAL_PROGRAM, CLEAR_STATE_PROGRAM
+
 
 def createAmmApp(
     client: AlgodClient,
@@ -419,11 +426,12 @@ def set_result(
 
 
 def closeAmm(client: AlgodClient, appID: int, closer, private_key):
-    """Close an amm.
+    """Close an AMM.
     Args:
         client: An Algod client.
         appID: The app ID of the amm.
-        closer: closer account. Must be the original creator of the pool.
+        closer: closer account public address. Must be the original creator of the pool.
+        private_key: closer account private key to sign the transactions.
     """
 
     deleteTxn = transaction.ApplicationDeleteTxn(

@@ -13,9 +13,10 @@ load_dotenv()
 private_key = os.getenv('key')
 creator = account.address_from_private_key(private_key)
 
+algod_token = os.getenv('algod_token')
 
 algod_address = "https://testnet-algorand.api.purestake.io/ps2"
-algod_token = os.getenv('algod_token')
+
 headers = {
    "X-API-Key": algod_token,
 }
@@ -159,11 +160,11 @@ redeem(
 
 # Delete
 
-""" print("Deleting")
+print("Deleting")
 
 closeAmm(
     client = client,
     appID = appID,
     closer=creator,
     private_key = private_key
-) """
+)
