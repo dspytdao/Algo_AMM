@@ -35,7 +35,7 @@ Code is available at this GitHub Repository.
 
 ## Steps
 
-# 1. Project Setup
+# Project Setup
 
 We setup Python virtual environment. The following commands will install and activate the virtual environment and then install needed dependencies.
 
@@ -54,7 +54,7 @@ pip install pyteal
 
 `source venv/bin/activate` to activate virtualenv once again. Replace bin with Scripts on Windows.
 
-# 2. PyTeal AMM Smart Contract
+# PyTeal AMM Smart Contract
 
 PyTeal contracts are written in Python using any editor of your choice. `compileProgram` method produces the TEAL code which is then compiled into bytecode and deployed to the blockchain.
 
@@ -72,7 +72,7 @@ cd contracts
 touch amm.py config.py helpers.py __init__.py
 ```
 
-## Configuration File
+# PyTeal Contract Configuration File
 
 In `config.py` we contain the global variables, except for `TOKEN_DEFAULT_AMOUNT`, to congifure the smart contract.
 
@@ -117,7 +117,7 @@ from contracts.config import (
 )
 ```
 
-## Main Conditional
+# Main Conditional
 
 ```python
     on_call_method = Txn.application_args[0]
@@ -148,7 +148,7 @@ from contracts.config import (
 
 This statement is the heart of the smart contract. Based on how the contract is called, it chooses which operation to run. For example, if `Txn.application_id()` is 0, then the code from `on_create` runs. If `Txn.on_completion()` is `OnComplete.NoOp`, then `on_call` runs. If `Txn.application_args[0]` is "setup", then `on_setup` runs. If either `Txn.on_completion()` are `OnComplete.OptIn`,`OnComplete.CloseOut`,`OnComplete.UpdateApplication` or none of the described cases are true, the program will exit an with error. Let’s look at each of these cases below.
 
-## On create
+# On create
 
 ```python
     on_create = Seq(
@@ -166,7 +166,7 @@ This part of the program is responsible for setting up the initial state of the 
 
 The values of `CREATOR_KEY`,`TOKEN_FUNDING_KEY` and `MIN_INCREMENT_KEY` keys are determined by the application call arguments from the `Txn.application_args` list. Meanhwile, `TOKEN_FUNDING_RESERVES`, `POOL_FUNDING_RESERVES` and `RESULT` are initialised as 0 integer values.
 
-### On setup
+# On setup
 
 ```python
 def get_setup():
@@ -189,8 +189,90 @@ def get_setup():
     )
 ```
 
-This code runs when an account calls `Txn.application_args[0]` that is `Bytes("setup")` into the smart contract.
-It returns true if the current pool token has no been created and has no outstanding tokens, meaning that it can only be set up once.
+This code runs when an account calls `Txn.application_args[0]` that is `Bytes("setup")` into the smart contract. It returns true if the current pool token has no been created and has no outstanding tokens, meaning that it can only be set up once.
+
+The methods create pool token, yes and no tokens, which the contract opts in the application.
+
+```python
+def createPoolToken(pool_token_amount: TealType.uint64) -> Expr:
+    return Seq(
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields(
+            {
+                TxnField.type_enum: TxnType.AssetConfig,
+                TxnField.config_asset_total: pool_token_amount,
+                TxnField.config_asset_name: Bytes("PoolToken"),
+                TxnField.config_asset_default_frozen: Int(0),
+                TxnField.config_asset_decimals: Int(0),
+                TxnField.config_asset_reserve: Global.current_application_address(),
+            }
+        ),
+        InnerTxnBuilder.Submit(),
+        App.globalPut(POOL_TOKEN_KEY, InnerTxn.created_asset_id()),
+        App.globalPut(POOL_TOKENS_OUTSTANDING_KEY, Int(0)),
+    )
+
+def optIn(token_key: TealType.bytes) -> Expr:
+    return sendToken(token_key, Global.current_application_address(), Int(0))
+
+def sendToken(
+    token_key: TealType.bytes, receiver: TealType.bytes, amount: TealType.uint64
+) -> Expr:
+    return Seq(
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields(
+            {
+                TxnField.type_enum: TxnType.AssetTransfer,
+                TxnField.xfer_asset: App.globalGet(token_key),
+                TxnField.asset_receiver: receiver,
+                TxnField.asset_amount: amount,
+            }
+        ),
+        InnerTxnBuilder.Submit(),
+    )
+
+def createNoToken(token_amount: TealType.uint64) -> Expr:
+    return Seq(
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields(
+            {
+                TxnField.type_enum: TxnType.AssetConfig,
+                TxnField.config_asset_total: token_amount,
+                TxnField.config_asset_name: Bytes("NoToken"),
+                TxnField.config_asset_unit_name: Bytes("No"),
+                TxnField.config_asset_default_frozen: Int(0),
+                TxnField.config_asset_decimals: Int(0),
+                TxnField.config_asset_reserve: Global.current_application_address(),
+            }
+        ),
+        InnerTxnBuilder.Submit(),
+        App.globalPut(NO_TOKEN_KEY, InnerTxn.created_asset_id()),
+        App.globalPut(NO_TOKENS_OUTSTANDING_KEY, Int(0)),
+        App.globalPut(NO_TOKENS_RESERVES, Int(0)),
+    )
+
+def createYesToken(token_amount: TealType.uint64) -> Expr:
+    return Seq(
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields(
+            {
+                TxnField.type_enum: TxnType.AssetConfig,
+                TxnField.config_asset_total: token_amount,
+                TxnField.config_asset_name: Bytes("YesToken"),
+                TxnField.config_asset_unit_name: Bytes("Yes"),
+                TxnField.config_asset_default_frozen: Int(0),
+                TxnField.config_asset_decimals: Int(0),
+                TxnField.config_asset_reserve: Global.current_application_address(),
+            }
+        ),
+        InnerTxnBuilder.Submit(),
+        App.globalPut(YES_TOKEN_KEY, InnerTxn.created_asset_id()),
+        App.globalPut(YES_TOKENS_OUTSTANDING_KEY, Int(0)),
+        App.globalPut(YES_TOKENS_RESERVES, Int(0)),
+    )
+```
+
+# On supply
 
 # 7. Create Account
 
