@@ -18,8 +18,15 @@ from contracts.config import (
 
 
 def get_setup():
-
+    pool_token_id = App.globalGetEx(Global.current_application_id(), POOL_TOKEN_KEY)
+    pool_tokens_outstanding = App.globalGetEx(
+        Global.current_application_id(), POOL_TOKENS_OUTSTANDING_KEY
+    )
     return Seq(
+        pool_token_id,
+        pool_tokens_outstanding,
+        Assert(Not(pool_token_id.hasValue())),
+        Assert(Not(pool_tokens_outstanding.hasValue())),
         createPoolToken(TOKEN_DEFAULT_AMOUNT),
         optIn(TOKEN_FUNDING_KEY),
         createNoToken(TOKEN_DEFAULT_AMOUNT),
@@ -157,9 +164,9 @@ def approval_program():
     on_create = Seq(
         App.globalPut(CREATOR_KEY, Txn.application_args[0]),
         App.globalPut(TOKEN_FUNDING_KEY, Btoi(Txn.application_args[1])),
+        App.globalPut(MIN_INCREMENT_KEY, Btoi(Txn.application_args[2])),
         App.globalPut(TOKEN_FUNDING_RESERVES, Int(0)),
         App.globalPut(POOL_FUNDING_RESERVES, Int(0)),
-        App.globalPut(MIN_INCREMENT_KEY, Btoi(Txn.application_args[2])),
         App.globalPut(RESULT, Int(0)),
         Approve(),
     )
@@ -171,15 +178,14 @@ def approval_program():
     on_redemption = get_redemption()
     on_result = get_result()
     
-
     on_call_method = Txn.application_args[0]
     on_call = Cond(
-        [on_call_method == Bytes("setup"), on_setup],#2
-        [on_call_method == Bytes("supply"), on_supply],#3
-        [on_call_method == Bytes("withdraw"), on_withdraw],#
-        [on_call_method == Bytes("redeem"), on_redemption],#
+        [on_call_method == Bytes("setup"), on_setup],
+        [on_call_method == Bytes("supply"), on_supply],
+        [on_call_method == Bytes("withdraw"), on_withdraw],
+        [on_call_method == Bytes("redeem"), on_redemption],
         [on_call_method == Bytes("result"), on_result],
-        [on_call_method == Bytes("swap"), on_swap],#4
+        [on_call_method == Bytes("swap"), on_swap],
     )
 
     on_delete = Seq(
@@ -193,8 +199,8 @@ def approval_program():
     )
 
     program = Cond(
-        [Txn.application_id() == Int(0), on_create],#1
-        [Txn.on_completion() == OnComplete.NoOp, on_call],#2, 3
+        [Txn.application_id() == Int(0), on_create],
+        [Txn.on_completion() == OnComplete.NoOp, on_call],
         [Txn.on_completion() == OnComplete.DeleteApplication, on_delete],
         [
             Or(
