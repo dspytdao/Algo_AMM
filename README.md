@@ -4,11 +4,11 @@
 
 ## Summary
 
-Following this tutorial you can create a Constant Sum Automated Market Maker for Prediction Market with the help of PyTeal and Py-algorand-sdk.
+Following this tutorial you can create a Constant Function Automated Market Maker for Prediction Market with the help of PyTeal and Py-algorand-sdk.
 
 ## Overview
 
-Constant Sum Automated Market Maker (AMM) contract provides configuration option and creates a market for an event that has a binary outcome.
+Constant Function Automated Market Maker (AMM) contract provides configuration option and creates a market for an event that has a binary outcome.
 
 Liquidity Pool provides a foundation for users to purchase and redeem spawned tokens once the event has been resolved. The Liquidity Pool supports a constant reserve ratio for stable price discovery and protection of users. The liquidity provided allows to spawn two tokens in equal amount in 50%/50% of the liquidity supplied,
 
