@@ -4,8 +4,17 @@
 
 ## Summary
 
-Following this tutorial you can create
-an Automated Market Maker for Prediction Market with the help of PyTeal and Py-algorand-sdk.
+Following this tutorial you can create a Constant Sum Automated Market Maker for Prediction Market with the help of PyTeal and Py-algorand-sdk.
+
+## Overview
+
+Constant Sum Automated Market Maker (AMM) contract provides configuration option and creates a market for an event that has a binary outcome.
+
+Liquidity Pool provides a foundation for users to purchase and redeem spawned tokens once the event has been resolved. The Liquidity Pool supports a constant reserve ratio for stable price discovery and protection of users. The liquidity provided allows to spawn two tokens in equal amount in 50%/50% of the liquidity supplied,
+
+The two tokens represent binary outcomes. Once the event has occured the price for one token should resolve to 1, while 0 for another. The purchase price for each token is determined by equation: x + y = k. Where x is the amount of A tokens in the AMM, y is the amount of B tokens in the AMM.
+
+Funds can only be released after the creator of the contract moderated the outcome.
 
 ## Requirements
 
@@ -22,18 +31,9 @@ PyTeal is a python library for generating TEAL programs. PyTeal is used for writ
 
 To interact with the smart contract the Python SDK will be used to compile and deploy the PyTeal smart contract code.
 
-The goal of the Automated Market Maker contract is to configure and create a Liquidity Pool, which allows users to purchase and redeem spawned tokens once the event has been realised.
-
-The Liqudity Pool supports a constant reserve ratio for stable price discovery and protection of users.
-
-The liquidity provided allows to spawn two tokens in equal amount, representing binary outcomes.
-Once the event has occured the price for one token should resolve to 1, while 0 for another.
-
-Funds can only be released after the creator of the contract assinged the outcome.
-
 Code is available at this GitHub Repository.
 
-## Steps
+# Steps
 
 # Project Setup
 
@@ -71,6 +71,8 @@ mkdir contracts
 cd contracts
 touch amm.py config.py helpers.py __init__.py
 ```
+
+In `amm.py` we will keep the high-level logic of the contract, `helpers.py` will contain lower level methods and `config.py` will keep track of global variable and key configuration variables.
 
 # PyTeal Contract Configuration File
 
@@ -174,7 +176,8 @@ def get_setup():
     pool_tokens_outstanding = App.globalGetEx(
         Global.current_application_id(), POOL_TOKENS_OUTSTANDING_KEY
     )
-    return Seq(
+
+    on_setup = Seq(
         pool_token_id,
         pool_tokens_outstanding,
         Assert(Not(pool_token_id.hasValue())),
@@ -187,9 +190,10 @@ def get_setup():
         optIn(YES_TOKEN_KEY),
         Approve(),
     )
+    return on_setup
 ```
 
-This code runs when an account calls `Txn.application_args[0]` that is `Bytes("setup")` into the smart contract. It returns true if the current pool token has no been created and has no outstanding tokens, meaning that it can only be set up once.
+This code runs when an account calls `Txn.application_args[0]` that equals to `Bytes("setup")` into the smart contract. It returns true if the current pool token has not been created and there are no outstanding tokens, meaning that the smart contract can only be set up once.
 
 The methods create pool token, yes and no tokens, which the contract opts in the application.
 
@@ -274,7 +278,310 @@ def createYesToken(token_amount: TealType.uint64) -> Expr:
 
 # On supply
 
-# 7. Create Account
+```python
+def get_supply():
+    token_txn_index = Txn.group_index() - Int(1)
+
+    on_supply = Seq(
+        Assert(
+            And(
+                validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
+                Gtxn[token_txn_index].asset_amount()
+                >= App.globalGet(MIN_INCREMENT_KEY),
+           )
+        ),
+        mintAndSendPoolToken(
+            Txn.sender(),
+            Gtxn[token_txn_index].asset_amount(),
+        ),
+        Approve(),
+    )
+    return on_supply
+```
+
+This code runs when an account calls `Txn.application_args[0]` that equals to `Bytes("supply")` into the smart contract. It returns true if the token received by the smart contract is the same funding (reserve) token declared in the `on_create` part of the program and is larger in quantity than the minimum value.
+
+`validateTokenReceived` validates the transfer of the tokens.
+`mintAndSendPoolToken` keeps track of the pool funding reserves and disburses the pool token based on the proportion of the provided to the exisitng funds.
+
+```python
+def validateTokenReceived(
+    transaction_index: TealType.uint64, token_key: TealType.bytes
+) -> Expr:
+    return And(
+        Gtxn[transaction_index].type_enum() == TxnType.AssetTransfer,
+        Gtxn[transaction_index].sender() == Txn.sender(),
+        Gtxn[transaction_index].asset_receiver()
+        == Global.current_application_address(),
+        Gtxn[transaction_index].xfer_asset() == App.globalGet(token_key),
+        Gtxn[transaction_index].asset_amount() > Int(0),
+    )
+
+def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> Expr:
+    return Seq(
+        If(App.globalGet(POOL_FUNDING_RESERVES) > Int(0))
+        .Then(
+            Seq(
+                sendToken(POOL_TOKEN_KEY, receiver, amount * App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) / App.globalGet(POOL_FUNDING_RESERVES) ),
+                App.globalPut(
+                    POOL_TOKENS_OUTSTANDING_KEY,
+                App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) + amount * App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) / App.globalGet(POOL_FUNDING_RESERVES)
+            ))
+        )
+        .ElseIf(App.globalGet(POOL_FUNDING_RESERVES) == Int(0))
+        .Then(
+            Seq(
+                sendToken(POOL_TOKEN_KEY, receiver, amount ),
+                App.globalPut(
+                    POOL_TOKENS_OUTSTANDING_KEY,
+                    App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) + amount,
+                ),
+            )
+        ),
+        App.globalPut(NO_TOKENS_RESERVES,  amount + App.globalGet(NO_TOKENS_RESERVES) ),
+        App.globalPut(YES_TOKENS_RESERVES, amount + App.globalGet(YES_TOKENS_RESERVES) ),
+        App.globalPut(
+            POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) + amount
+        ),
+    )
+```
+
+# On Withdraw
+
+```python
+def get_withdraw():
+    pool_token_txn_index = Txn.group_index() - Int(1)
+
+    on_withdraw = Seq(
+        Assert(
+            validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY)
+        ),
+        withdrawLPToken(
+            Txn.sender(),
+            Gtxn[pool_token_txn_index].asset_amount(),
+        ),
+        Approve(),
+    )
+
+    return on_withdraw
+```
+
+The code runs when an account calls `Txn.application_args[0]` that equals to `Bytes("withdraw")` into the smart contract. It returns true if the token received by the smart contract is the same pool token created in the `on_create` part of the program.
+
+`withdrawLPToken` sends the proportional amount of funding (reserve) token to outstanding pool token, supplied pool tokens and funding reserves.
+
+```python
+def withdrawLPToken(
+    receiver: TealType.bytes,
+    pool_token_amount: TealType.uint64,
+) -> Expr:
+
+    return Seq(
+        sendToken(
+            TOKEN_FUNDING_KEY,
+            receiver,
+            App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY),
+        ),
+        App.globalPut(
+            POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)),
+        ),
+        App.globalPut(
+            POOL_TOKENS_OUTSTANDING_KEY,
+            App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) - pool_token_amount,
+        ),
+    )
+
+```
+
+# On Swap
+
+```python
+def get_swap():
+    token_txn_index = Txn.group_index() - Int(1)
+    option = Txn.application_args[1]
+
+    on_swap = Seq(
+        Assert(
+            validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
+        ),
+        If(option == Bytes("buy_yes"))
+        .Then(
+            Seq(
+                mintAndSendYesToken(
+                    Txn.sender(),
+                    Gtxn[token_txn_index].asset_amount(),
+                ),
+                Approve()
+            ),
+        )
+        .ElseIf(option == Bytes("buy_no"))
+        .Then(
+            Seq(
+                mintAndSendNoToken(
+                    Txn.sender(),
+                    Gtxn[token_txn_index].asset_amount(),
+                ),
+                Approve()
+            ),
+        ),
+        Reject()
+        )
+
+    return on_swap
+```
+
+The code runs when an account calls `Txn.application_args[0]` that equals to `Bytes("swap")` into the smart contract. It returns true if the token received by the smart contract is the same funding (reserve) token declared in `on_create` part of the program.
+
+Depending on the argument in `Txn.application_args[1]`, the user either can choose a yes or no option token. The price of each token is explicitly determined by the existing liquidity, reserves of yes and no tokens and the size of the trade.
+
+```python
+def mintAndSendNoToken(
+    receiver: TealType.bytes, amount: TealType.uint64
+) -> Expr:
+    funding = AssetHolding.balance(
+        Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
+    )
+    tokensOut: ScratchVar = ScratchVar(TealType.uint64)
+    return Seq(
+        tokensOut.store(
+            App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount )
+        ),
+        App.globalPut(NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
+        App.globalPut(NO_TOKENS_RESERVES, App.globalGet(NO_TOKENS_RESERVES) - tokensOut.load()),
+        sendToken(NO_TOKEN_KEY, receiver, tokensOut.load()),
+        If(App.globalGet(NO_TOKENS_OUTSTANDING_KEY) > App.globalGet(YES_TOKENS_OUTSTANDING_KEY))
+        .Then(
+            App.globalPut(TOKEN_FUNDING_RESERVES, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) * Int(2))
+        ),
+        funding,
+        App.globalPut(
+            POOL_FUNDING_RESERVES,
+            funding.value() - App.globalGet(TOKEN_FUNDING_RESERVES)
+        ),
+    )
+
+
+def mintAndSendYesToken(
+    receiver: TealType.bytes, amount: TealType.uint64
+) -> Expr:
+    funding = AssetHolding.balance(
+        Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
+    )
+    tokensOut: ScratchVar = ScratchVar(TealType.uint64)
+    return Seq(
+        tokensOut.store(
+            (App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount )) #* (Int(10000) - App.globalGet(FEE_BPS_KEY)) / Int(10000)
+        ),
+        App.globalPut(YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
+        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - tokensOut.load()),
+        sendToken(YES_TOKEN_KEY, receiver, tokensOut.load()),
+        If(App.globalGet(YES_TOKENS_OUTSTANDING_KEY) > App.globalGet(NO_TOKENS_OUTSTANDING_KEY))
+        .Then(
+            App.globalPut(TOKEN_FUNDING_RESERVES, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) * Int(2))
+        ),
+        funding,
+        App.globalPut(
+            POOL_FUNDING_RESERVES,
+            funding.value() - App.globalGet(TOKEN_FUNDING_RESERVES)
+        ),
+    )
+```
+
+# On Result
+
+```python
+def get_result():
+    result = Txn.application_args[1]
+
+    on_result = Seq(
+        Assert(
+            Txn.sender() == App.globalGet(CREATOR_KEY)
+        ),
+        If(result == Bytes("yes"))
+        .Then(
+            Seq(
+                App.globalPut(RESULT, App.globalGet(YES_TOKEN_KEY)),
+                Approve()
+            )
+        )
+        .ElseIf(
+                result == Bytes("no"),
+            )
+        .Then(
+            Seq(
+                App.globalPut(RESULT, App.globalGet(NO_TOKEN_KEY)),
+                Approve()
+            )
+        ),
+        Reject(),
+    )
+
+    return on_result
+```
+
+The code runs when an account calls `Txn.application_args[0]` that equals to `Bytes("result")` into the smart contract. It returns true if the token received by the smart contract is the creator account declared in `on_create` part of the program.
+
+Depending on the argument in `Txn.application_args[1]`, the creator should choose a yes or no result of the event to declare the winning option.
+
+# On Redemption
+
+```python
+def get_redemption():
+    token_txn_index = Txn.group_index() - Int(1)
+
+    on_redemption = Seq(
+        Assert(
+            And(
+                validateTokenReceived(token_txn_index, RESULT),
+            )
+        ),
+        redeemToken(
+            Txn.sender(),
+            Gtxn[token_txn_index].asset_amount(),
+        ),
+        Approve(),
+    )
+
+    return on_redemption
+```
+
+The code runs when an account calls `Txn.application_args[0]` that equals to `Bytes("redeem")` into the smart contract. It returns true if the token received by the smart contract is the winner decided in `on_result` part of the program.
+
+`redeemToken` tracks the withdrawal of Yes/No Tokens. Since the initial distribution of liqudity provided was distribtued in 50%/50% towards each token, after the deadline the winning token should be worth double its initial price.
+
+```python
+def redeemToken(
+    receiver: TealType.bytes,
+    result_token_amount: TealType.uint64,
+) -> Expr:
+
+    return Seq(
+        sendToken(
+            TOKEN_FUNDING_KEY,
+            receiver,
+            result_token_amount * Int(2)
+        ),
+        App.globalPut(
+            TOKEN_FUNDING_RESERVES, App.globalGet(TOKEN_FUNDING_RESERVES) - result_token_amount * Int(2)
+        ),
+        If( App.globalGet(RESULT) == App.globalGet(YES_TOKEN_KEY) )
+        .Then(
+            App.globalPut(
+                YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) - result_token_amount
+            ),
+        )
+        .ElseIf(App.globalGet(RESULT) == App.globalGet(NO_TOKEN_KEY) )
+        .Then(
+            App.globalPut(
+                NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) - result_token_amount
+            ),
+        ),
+    )
+```
+
+# Contract Demo
+
+## Create Account
 
 To deploy a smart contract we create an account and fund it using [Testnet Dispensary](https://dispenser.testnet.aws.algodev.network/).
 
@@ -285,6 +592,711 @@ from algosdk import account
 private_key, address = account.generate_account()
 print("Private key:", private_key)
 print("Address:", address)
+```
+
+## Connect to AlgodClient
+
+We register on the [purestake.com](https://purestake.com) to obtain the api key and initialize the Algorand Client.
+
+```python
+algod_token = "Enter Yout token here"
+algod_address = "https://testnet-algorand.api.purestake.io/ps2"
+
+headers = {
+   "X-API-Key": algod_token,
+}
+
+# initialize an algodClient
+client = algod.AlgodClient(algod_token, algod_address, headers)
+```
+
+## Create Reserve Asset
+
+We create an asset that will be used for reserves in the contract and return the asset index.
+
+```python
+from algosdk import account
+from algosdk.future import transaction
+
+def wait_for_confirmation(client, txid):
+    last_round = client.status().get("last-round")
+    txinfo = client.pending_transaction_info(txid)
+    while not (txinfo.get("confirmed-round") and txinfo.get("confirmed-round") > 0):
+        print("Waiting for confirmation...")
+        last_round += 1
+        client.status_after_block(last_round)
+        txinfo = client.pending_transaction_info(txid)
+    print(
+        "Transaction {} confirmed in round {}.".format(
+            txid, txinfo.get("confirmed-round")
+        )
+    )
+    return txinfo
+
+
+def create_asset(client, private_key):
+    # declare sender
+    sender = account.address_from_private_key(private_key)
+
+    params = client.suggested_params()
+
+    txn = transaction.AssetConfigTxn(
+        sender=sender,
+        sp=params,
+        total=1_000_000_000,
+        default_frozen=False,
+        unit_name="Copio",
+        asset_name="coin",
+        manager=sender,
+        reserve=sender,
+        freeze=sender,
+        clawback=sender,
+        strict_empty_address_check=False,
+        url=None,
+        decimals=0)
+
+    # Sign with secret key of creator
+    stxn = txn.sign(private_key)
+
+    # Send the transaction to the network and retrieve the txid.
+
+    txid = client.send_transaction(stxn)
+    print("Signed transaction with txID: {}".format(txid))
+    # Wait for the transaction to be confirmed
+    response = wait_for_confirmation(client, txid)
+    print("TXID: ", txid)
+    print("Result confirmed in round: {}".format(response['confirmed-round']))
+    return response['asset-index']
+```
+
+## Deploy Contract
+
+First, to interact with the smart contract we need to compile and deploy it. `createAmmApp` function requires client, reserve token id, minimum increment of the reserve token, creator address and private_key to sign the transaction.
+
+```python
+def waitForTransaction(
+    client: AlgodClient, txID: str, timeout: int = 10
+) -> json:
+
+    lastStatus = client.status()
+    lastRound = lastStatus["last-round"]
+    startRound = lastRound
+
+    while lastRound < startRound + timeout:
+        pending_txn = client.pending_transaction_info(txID)
+
+        if pending_txn.get("confirmed-round", 0) > 0:
+            return pending_txn
+
+        if pending_txn["pool-error"]:
+            raise Exception("Pool error: {}".format(pending_txn["pool-error"]))
+
+        lastStatus = client.status_after_block(lastRound + 1)
+
+        lastRound += 1
+
+    raise Exception(
+        "Transaction {} not confirmed after {} rounds".format(txID, timeout)
+    )
+
+def fullyCompileContract(
+    client: AlgodClient, contract: Expr
+) -> bytes:
+
+    teal = compileTeal(contract, mode=Mode.Application, version=6)
+    response = client.compile(teal)
+
+    return b64decode(response["result"])
+
+def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
+    """Get the compiled TEAL contracts for the amm.
+    Args:q
+        client: An algod client that has the ability to compile TEAL programs.
+    Returns:
+        A tuple of 2 byte strings. The first is the approval program, and the
+        second is the clear state program.
+    """
+
+    APPROVAL_PROGRAM = fullyCompileContract(client, approval_program())
+    CLEAR_STATE_PROGRAM = fullyCompileContract(client, clear_program())
+
+    return APPROVAL_PROGRAM, CLEAR_STATE_PROGRAM
+
+def createAmmApp(
+    client: AlgodClient,
+    token: int,
+    minIncrement: int,
+    creator: str, private_key: str
+) -> int:
+    """Creates a new amm.
+    Args:
+        client: An algod client.
+        creator: The account that will create the amm application.
+        token: The id of token A in the liquidity pool,
+    Returns:
+        The ID of the newly created amm app.
+    """
+    approval, clear = getContracts(client)
+
+    globalSchema = transaction.StateSchema(num_uints=13, num_byte_slices=1)
+    localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
+
+    app_args = [
+        encoding.decode_address(creator),
+        token.to_bytes(8, "big"),
+        minIncrement.to_bytes(8, "big"),
+    ]
+
+    txn = transaction.ApplicationCreateTxn(
+        sender=creator,
+        on_complete=transaction.OnComplete.NoOpOC,
+        approval_program=approval,
+        clear_program=clear,
+        global_schema=globalSchema,
+        local_schema=localSchema,
+        app_args=app_args,
+        sp=client.suggested_params(),
+    )
+
+    signedTxn = txn.sign(private_key)
+
+    client.send_transaction(signedTxn)
+
+    response = waitForTransaction(client, signedTxn.get_txid())
+    assert response["application-index"] is not None and response["application-index"] > 0
+    return response["application-index"]
+```
+
+## Setting up the AMM
+
+```python
+MIN_BALANCE_REQUIREMENT = (
+    # min account balance
+    110_000
+    # additional min balance for 4 assets
+    + 100_000 * 4
+)
+
+
+def setupAmmApp(
+    client: AlgodClient,
+    appID: int,
+    token: int,
+    funder: str, private_key: str
+) -> int:
+    """Finish setting up an amm.
+    This operation funds the pool account, creates pool token,
+    and opts app into tokens A and B, all in one atomic transaction group.
+    Args:
+        client: An algod client.
+        appID: The app ID of the amm.
+        funder: The account providing the funding for the escrow account.
+        token: Token id.
+        private_key
+    Return: pool token id
+    """
+    appAddr = get_application_address(appID)
+
+    suggestedParams = client.suggested_params()
+
+    fundAppTxn = transaction.PaymentTxn(
+        sender=funder,
+        receiver=appAddr,
+        amt=MIN_BALANCE_REQUIREMENT,
+        sp=suggestedParams,
+    )
+
+    setupTxn = transaction.ApplicationCallTxn(
+        sender=funder,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"setup"],
+        foreign_assets=[token],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([fundAppTxn, setupTxn])
+
+    signedFundAppTxn = fundAppTxn.sign(private_key)
+    signedSetupTxn = setupTxn.sign(private_key)
+
+    client.send_transactions([signedFundAppTxn, signedSetupTxn])
+
+    waitForTransaction(client, signedFundAppTxn.get_txid())
+    glob_state = client.application_info(appID)['params']['global-state']
+
+    ids = {}
+
+    for i in range(len(glob_state)):
+        if b64decode(glob_state[i]['key']) == b"pool_token_key":
+            ids['pool_token_key'] = glob_state[i]['value']['uint']
+        elif b64decode(glob_state[i]['key']) == b"yes_token_key":
+            ids['yes_token_key'] = glob_state[i]['value']['uint']
+        elif b64decode(glob_state[i]['key']) == b"no_token_key":
+            ids['no_token_key'] = glob_state[i]['value']['uint']
+
+    return ids
+```
+
+`setupAmmApp` method requires an `appID` as one of the arguments. It funds the app and calls the smart contract with the given arguments all in one atomic transaction group. The method returns the dictionary with ids of created pool and option tokens.
+
+Further we need to opt in to the created new assets:
+
+```python
+def optInToPoolToken(
+    client: AlgodClient,
+    poolToken: int,
+    account: str, private_key: str
+    ):
+    """Opts into Pool Token
+    Args:
+        client: An algod client.
+        account: The account opting into the token.
+        poolToken: Token id.
+        private_key: to sign the tx.
+    """
+    suggestedParams = client.suggested_params()
+
+    optInTxn = transaction.AssetOptInTxn(
+        sender=account, index=poolToken, sp=suggestedParams
+    )
+
+    signedOptInTxn = optInTxn.sign(private_key)
+
+    client.send_transaction(signedOptInTxn)
+    waitForTransaction(client, signedOptInTxn.get_txid())
+```
+
+## Supplying AMM with Liqudity
+
+```python
+def supply(
+    client: AlgodClient, appID: int, q: int, supplier: str, private_key: str, \
+    token: int, poolToken: int, yesToken: int, noToken:int
+) -> None:
+    """Supply liquidity to the pool.
+    """
+    appAddr = get_application_address(appID)
+    suggestedParams = client.suggested_params()
+
+    # pay for the fee incurred by AMM for sending back the pool token
+    feeTxn = transaction.PaymentTxn(
+        sender=supplier,
+        receiver=appAddr,
+        amt=MIN_BALANCE_REQUIREMENT,
+        sp=suggestedParams,
+    )
+
+    tokenTxn = transaction.AssetTransferTxn(
+        sender=supplier,
+        receiver=appAddr,
+        index=token,
+        amt=q,
+        sp=suggestedParams,
+    )
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=supplier,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"supply"],
+        foreign_assets=[token, poolToken, yesToken, noToken],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, tokenTxn, appCallTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedTokenTxn = tokenTxn.sign(private_key)
+    signedAppCallTxn = appCallTxn.sign(private_key)
+
+    client.send_transactions(
+        [signedFeeTxn, signedTokenTxn, signedAppCallTxn]
+    )
+    waitForTransaction(client, signedAppCallTxn.get_txid())
+```
+
+## Swap stablecoin for Option
+
+```python
+def swap(
+    client: AlgodClient, appID: int, option: str, q: int, supplier: int, \
+    private_key: str, token: int, poolToken: int, yesToken: int, noToken: int
+) -> None:
+
+    if option == 'yes':
+        second_argument = b"buy_yes"
+    elif option =='no':
+        second_argument = b"buy_no"
+    else:
+        return
+
+    appAddr = get_application_address(appID)
+    suggestedParams = client.suggested_params()
+
+    # pay for the fee incurred by AMM for sending back the pool token
+    feeTxn = transaction.PaymentTxn(
+        sender=supplier,
+        receiver=appAddr,
+        amt=2_000,
+        sp=suggestedParams,
+    )
+
+    tokenTxn = transaction.AssetTransferTxn(
+        sender=supplier,
+        receiver=appAddr,
+        index=token,
+        amt=q,
+        sp=suggestedParams,
+    )
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=supplier,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[ b"swap", second_argument],
+        foreign_assets=[token, poolToken, yesToken, noToken],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, tokenTxn, appCallTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedTokenTxn = tokenTxn.sign(private_key)
+    signedAppCallTxn = appCallTxn.sign(private_key)
+
+    client.send_transactions(
+        [signedFeeTxn, signedTokenTxn, signedAppCallTxn]
+    )
+    waitForTransaction(client, signedAppCallTxn.get_txid())
+```
+
+## Withdraw LP tokens
+
+```python
+
+def withdraw(
+    client: AlgodClient, appID: int, poolToken: int, poolTokenAmount: int,
+    withdrawAccount: str, token: int, private_key: str
+) -> None:
+    """Withdraw liquidity  + rewards from the pool back to supplier.
+    Supplier should receive stablecoin + fees proportional to the liquidity share in the pool they choose to withdraw.
+    """
+    appAddr = get_application_address(appID)
+    suggestedParams = client.suggested_params()
+
+    # pay for the fee incurred by AMM for sending back tokens A and B
+    feeTxn = transaction.PaymentTxn(
+        sender=withdrawAccount,
+        receiver=appAddr,
+        amt=2_000,
+        sp=suggestedParams,
+    )
+
+
+    poolTokenTxn = transaction.AssetTransferTxn(
+        sender=withdrawAccount,
+        receiver=appAddr,
+        index=poolToken,
+        amt=poolTokenAmount,
+        sp=suggestedParams,
+    )
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=withdrawAccount,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"withdraw"],
+        foreign_assets=[token, poolToken],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, poolTokenTxn, appCallTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedPoolTokenTxn = poolTokenTxn.sign(private_key)
+    signedAppCallTxn = appCallTxn.sign(private_key)
+
+    client.send_transactions([signedFeeTxn, signedPoolTokenTxn, signedAppCallTxn])
+    waitForTransaction(client, signedAppCallTxn.get_txid())
+```
+
+## Set result
+
+```python
+def set_result(
+    client: AlgodClient,
+    appID: int,
+    funder: str,
+    private_key: str,
+    second_argument
+):
+    appAddr = get_application_address(appID)
+
+    suggestedParams = client.suggested_params()
+
+    feeTxn = transaction.PaymentTxn(
+        sender=funder,
+        receiver=appAddr,
+        amt=2_000,
+        sp=suggestedParams,
+    )
+
+    callTxn = transaction.ApplicationCallTxn(
+        sender=funder,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"result", second_argument],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, callTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedAppCallTxn = callTxn.sign(private_key)
+
+    client.send_transactions([signedFeeTxn, signedAppCallTxn])
+    waitForTransaction(client, signedAppCallTxn.get_txid())
+```
+
+## Redeem Resolved Option for Stablecoin
+
+```python
+def redeem(
+    client: AlgodClient, appID: int, Token:int, TokenAmount: int,
+    withdrawAccount: str, token: int, private_key: str
+) -> None:
+
+    appAddr = get_application_address(appID)
+    suggestedParams = client.suggested_params()
+
+    # pay for the fee incurred by AMM for sending back tokens A and B
+    feeTxn = transaction.PaymentTxn(
+        sender=withdrawAccount,
+        receiver=appAddr,
+        amt=2_000,
+        sp=suggestedParams,
+    )
+
+
+    TokenTxn = transaction.AssetTransferTxn(
+        sender=withdrawAccount,
+        receiver=appAddr,
+        index=Token,
+        amt=TokenAmount,
+        sp=suggestedParams,
+    )
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=withdrawAccount,
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"redeem"],
+        foreign_assets=[token, Token],
+        sp=suggestedParams,
+    )
+
+    transaction.assign_group_id([feeTxn, TokenTxn, appCallTxn])
+    signedFeeTxn = feeTxn.sign(private_key)
+    signedPoolTokenTxn = TokenTxn.sign(private_key)
+    signedAppCallTxn = appCallTxn.sign(private_key)
+
+    client.send_transactions([signedFeeTxn, signedPoolTokenTxn, signedAppCallTxn])
+    waitForTransaction(client, signedAppCallTxn.get_txid())
+```
+
+## Close out the AMM
+
+```python
+def closeAmm(
+    client: AlgodClient, appID: int, closer: str, private_key: str
+)-> None:
+    """Close an AMM.
+    Args:
+        client: An Algod client.
+        appID: The app ID of the amm.
+        closer: closer account public address. Must be the original creator of the pool.
+        private_key: closer account private key to sign the transactions.
+    """
+
+    deleteTxn = transaction.ApplicationDeleteTxn(
+        sender=closer,
+        index=appID,
+        sp=client.suggested_params(),
+    )
+    signedDeleteTxn = deleteTxn.sign(private_key)
+
+    client.send_transaction(signedDeleteTxn)
+
+    waitForTransaction(client, signedDeleteTxn.get_txid())
+```
+
+## Example Script
+
+```python
+import os
+from dotenv import load_dotenv
+from algosdk import account
+from algosdk.v2client import algod
+
+from create_asset import create_asset
+from amm_api import createAmmApp, setupAmmApp, optInToPoolToken, \
+    supply, withdraw, swap, set_result, closeAmm, redeem
+
+
+load_dotenv()
+
+private_key = os.getenv('key')
+creator = account.address_from_private_key(private_key)
+
+algod_token = os.getenv('algod_token')
+
+algod_address = "https://testnet-algorand.api.purestake.io/ps2"
+
+headers = {
+   "X-API-Key": algod_token,
+}
+
+# initialize an algodClient
+client = algod.AlgodClient(algod_token, algod_address, headers)
+
+# create (stable) asset
+token = create_asset(client, private_key)
+
+appID = createAmmApp(
+    client=client,
+    creator=creator,
+    private_key=private_key,
+    token=token,
+    minIncrement=1000,
+)
+
+print(f"Alice is setting up and funding amm {appID}")
+
+Tokens = setupAmmApp(
+    client=client,
+    appID=appID,
+    funder=creator,
+    private_key=private_key,
+    token=token,
+)
+
+poolToken = Tokens['pool_token_key']
+yesToken = Tokens['yes_token_key']
+noToken = Tokens['no_token_key']
+
+print(Tokens['pool_token_key'], Tokens['yes_token_key'], Tokens['no_token_key'])
+
+optInToPoolToken(client, creator, private_key, poolToken)
+optInToPoolToken(client, creator, private_key, yesToken)
+optInToPoolToken(client, creator, private_key, noToken)
+
+
+print("Supplying AMM with initial token")
+
+poolTokenFirstAmount = 500_000
+
+supply(
+    client=client,
+    appID=appID,
+    q=poolTokenFirstAmount,
+    supplier=creator,
+    private_key=private_key,
+    token=token,
+    poolToken=poolToken,
+    yesToken=yesToken, noToken=noToken
+)
+
+print("Supplying AMM with more tokens")
+
+poolTokenSecondAmount = 1_500_000
+
+supply(
+    client=client,
+    appID=appID,
+    q=poolTokenSecondAmount,
+    supplier=creator,
+    private_key=private_key,
+    token=token,
+    poolToken=poolToken,
+    yesToken=yesToken, noToken=noToken
+)
+
+print("Swapping")
+
+yesTokenAmount = 100_000
+
+# buy yes token
+swap(
+    client=client,
+    appID=appID,
+    option="yes",
+    q=yesTokenAmount,
+    supplier=creator,
+    private_key=private_key,
+    token=token,
+    poolToken=poolToken,
+    yesToken=yesToken,
+    noToken=noToken
+)
+
+#buy no token
+swap(
+    client=client,
+    appID=appID,
+    option="no",
+    q=yesTokenAmount,
+    supplier=creator,
+    private_key=private_key,
+    token=token,
+    poolToken=poolToken,
+    yesToken=yesToken,
+    noToken=noToken
+)
+
+print("Withdrawing")
+
+AllTokens = 2_000_000
+
+withdraw(
+    client = client,
+    appID = appID,
+    poolTokenAmount = AllTokens, poolToken = poolToken,
+    withdrawAccount = creator, private_key = private_key, token = token
+)
+
+print("Result")
+#set winner
+
+set_result(
+    client = client,
+    appID = appID,
+    second_argument=b"yes",
+    funder=creator,
+    private_key = private_key
+)
+
+
+# redemption for for yes/no
+
+print("Redeeming")
+
+YesTokensAmount = 95_238
+
+redeem(
+    client = client,
+    appID = appID,
+    TokenAmount = YesTokensAmount,
+    Token = yesToken,
+    withdrawAccount = creator, private_key = private_key, token = token
+)
+
+# Delete
+
+print("Deleting")
+
+closeAmm(
+    client = client,
+    appID = appID,
+    closer=creator,
+    private_key = private_key
+)
 ```
 
 ## Useful Resources

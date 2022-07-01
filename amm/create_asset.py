@@ -29,7 +29,7 @@ def create_asset(client, private_key):
         total=1_000_000_000,
         default_frozen=False,
         unit_name="Copio",
-        asset_name="Cocoin",
+        asset_name="coin",
         manager=sender,
         reserve=sender,
         freeze=sender,

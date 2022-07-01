@@ -22,7 +22,8 @@ def get_setup():
     pool_tokens_outstanding = App.globalGetEx(
         Global.current_application_id(), POOL_TOKENS_OUTSTANDING_KEY
     )
-    return Seq(
+    
+    on_setup = Seq(
         pool_token_id,
         pool_tokens_outstanding,
         Assert(Not(pool_token_id.hasValue())),
@@ -35,8 +36,8 @@ def get_setup():
         optIn(YES_TOKEN_KEY),
         Approve(),
     )
+    return on_setup
 
-# supply liquidity, receive pool token
 def get_supply():
     token_txn_index = Txn.group_index() - Int(1)
 
@@ -59,8 +60,8 @@ def get_supply():
 
 def get_swap():
     token_txn_index = Txn.group_index() - Int(1)
-
     option = Txn.application_args[1]  
+    
     on_swap = Seq(
         Assert(
             validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
@@ -92,14 +93,11 @@ def get_swap():
 
 
 def get_withdraw():
-
     pool_token_txn_index = Txn.group_index() - Int(1)
+    
     on_withdraw = Seq(
         Assert(
-            And(
-                validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
-                Gtxn[pool_token_txn_index].asset_amount() > Int(0),
-            )
+            validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),    
         ),
         withdrawLPToken(
             Txn.sender(),
@@ -113,6 +111,7 @@ def get_withdraw():
 
 def get_result():
     result = Txn.application_args[1]
+    
     on_result = Seq(
         Assert(
             Txn.sender() == App.globalGet(CREATOR_KEY)
@@ -141,9 +140,9 @@ def get_result():
 
 
 def get_redemption():
-
     token_txn_index = Txn.group_index() - Int(1)
-    on_withdraw = Seq(
+    
+    on_redemption = Seq(
         Assert(
             And(
                 validateTokenReceived(token_txn_index, RESULT),
@@ -156,7 +155,7 @@ def get_redemption():
         Approve(),
     )
 
-    return on_withdraw
+    return on_redemption
 
 
 def approval_program():
@@ -183,9 +182,9 @@ def approval_program():
         [on_call_method == Bytes("setup"), on_setup],
         [on_call_method == Bytes("supply"), on_supply],
         [on_call_method == Bytes("withdraw"), on_withdraw],
+        [on_call_method == Bytes("swap"), on_swap],
         [on_call_method == Bytes("redeem"), on_redemption],
         [on_call_method == Bytes("result"), on_result],
-        [on_call_method == Bytes("swap"), on_swap],
     )
 
     on_delete = Seq(

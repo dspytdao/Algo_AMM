@@ -24,7 +24,7 @@ headers = {
 # initialize an algodClient
 client = algod.AlgodClient(algod_token, algod_address, headers)
 
-#create (stable) asset
+# create (stable) asset
 token = create_asset(client, private_key)
 
 appID = createAmmApp(

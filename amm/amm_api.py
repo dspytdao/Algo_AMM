@@ -1,4 +1,5 @@
 import json
+from os import strerror
 from typing import Tuple 
 from base64 import b64decode
 
@@ -74,19 +75,20 @@ def createAmmApp(
     client: AlgodClient,
     token: int,
     minIncrement: int,
-    creator, private_key
+    creator: str, private_key: str
 ) -> int:
-    """Create a new amm.
+    """Creates a new amm.
     Args:
         client: An algod client.
         creator: The account that will create the amm application.
         token: The id of token A in the liquidity pool,
+        minIncrement: int that
+        private_key to sign the tx
     Returns:
         The ID of the newly created amm app.
     """
     approval, clear = getContracts(client)
 
-    # tokenA, tokenB, poolToken, fee
     globalSchema = transaction.StateSchema(num_uints=13, num_byte_slices=1)
     localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
@@ -120,7 +122,7 @@ def setupAmmApp(
     client: AlgodClient,
     appID: int,
     token: int,
-    funder, private_key
+    funder: str, private_key: str
 ) -> int:
     """Finish setting up an amm.
     This operation funds the pool account, creates pool token,
@@ -130,6 +132,7 @@ def setupAmmApp(
         appID: The app ID of the amm.
         funder: The account providing the funding for the escrow account.
         token: Token id.
+        private_key to sign the tx
     Return: pool token id
     """
     appAddr = get_application_address(appID)
@@ -175,7 +178,18 @@ def setupAmmApp(
     return ids
 
 
-def optInToPoolToken(client, account, private_key, poolToken):
+def optInToPoolToken(
+    client: AlgodClient,
+    poolToken: int,
+    account: str, private_key: str
+) -> None:
+    """Opts into Pool Token
+    Args:
+        client: An algod client.
+        account: The account opting into the token.
+        poolToken: Token id.
+        private_key: to sign the tx.
+    """
     suggestedParams = client.suggested_params()
 
     optInTxn = transaction.AssetOptInTxn(
@@ -189,22 +203,10 @@ def optInToPoolToken(client, account, private_key, poolToken):
 
 
 def supply(
-    client: AlgodClient, appID: int, q: int, supplier, private_key, \
-    token, poolToken, yesToken, noToken
+    client: AlgodClient, appID: int, q: int, supplier: str, private_key: str, \
+    token: int, poolToken: int, yesToken: int, noToken:int
 ) -> None:
     """Supply liquidity to the pool.
-    Let rA, rB denote the existing pool reserves of token A and token B respectively
-    First supplier will receive sqrt(qA*qB) tokens, subsequent suppliers will receive
-    qA/rA where rA is the amount of token A already in the pool.
-    If qA/qB != rA/rB, the pool will first attempt to take full amount qA, returning excess token B
-    Else if there is insufficient amount qB, the pool will then attempt to take the full amount qB, returning
-     excess token A
-    Else transaction will be rejected
-    Args:
-        client: AlgodClient,
-        appID: amm app id,
-        q: amount of token to supply the pool
-        supplier: supplier account
     """
     appAddr = get_application_address(appID)
     suggestedParams = client.suggested_params()
@@ -245,8 +247,10 @@ def supply(
     waitForTransaction(client, signedAppCallTxn.get_txid())
 
 
-def swap(client: AlgodClient, appID: int, option: str, q: int, supplier, \
-    private_key, token, poolToken, yesToken, noToken):
+def swap(
+    client: AlgodClient, appID: int, option: str, q: int, supplier: int, \
+    private_key: str, token: int, poolToken: int, yesToken: int, noToken: int
+) -> None:
 
     if option == 'yes':
         second_argument = b"buy_yes"
@@ -295,15 +299,11 @@ def swap(client: AlgodClient, appID: int, option: str, q: int, supplier, \
 
 
 def withdraw(
-    client: AlgodClient, appID: int, poolToken:int, poolTokenAmount: int, withdrawAccount, token, private_key
+    client: AlgodClient, appID: int, poolToken: int, poolTokenAmount: int,
+    withdrawAccount: str, token: int, private_key: str
 ) -> None:
     """Withdraw liquidity  + rewards from the pool back to supplier.
     Supplier should receive stablecoin + fees proportional to the liquidity share in the pool they choose to withdraw.
-    Args:
-        client: AlgodClient,
-        appID: amm app id,
-        poolTokenAmount: pool token quantity,
-        withdrawAccount: supplier account,
     """
     appAddr = get_application_address(appID)
     suggestedParams = client.suggested_params()
@@ -344,17 +344,10 @@ def withdraw(
 
 
 def redeem(
-    client: AlgodClient, appID: int, Token:int, TokenAmount: int, withdrawAccount, token, private_key
+    client: AlgodClient, appID: int, Token:int, TokenAmount: int, 
+    withdrawAccount: str, token: int, private_key: str
 ) -> None:
-    """
-    Withdraw liquidity  + rewards from the pool back to supplier.
-    Supplier should receive stablecoin + fees proportional to the liquidity share in the pool they choose to withdraw.
-    Args:
-        client: AlgodClient,
-        appID: amm app id,
-        poolTokenAmount: pool token quantity,
-        withdrawAccount: supplier account,
-    """
+
     appAddr = get_application_address(appID)
     suggestedParams = client.suggested_params()
 
@@ -396,8 +389,11 @@ def redeem(
 def set_result(
     client: AlgodClient,
     appID: int,
-    second_argument,
-    funder, private_key):    
+    funder: str,
+    private_key: str,
+    second_argument
+)-> None:
+
     appAddr = get_application_address(appID)
 
     suggestedParams = client.suggested_params()
@@ -425,7 +421,9 @@ def set_result(
     waitForTransaction(client, signedAppCallTxn.get_txid())
 
 
-def closeAmm(client: AlgodClient, appID: int, closer, private_key):
+def closeAmm(
+    client: AlgodClient, appID: int, closer: str, private_key: str
+)-> None:
     """Close an AMM.
     Args:
         client: An Algod client.

@@ -1,10 +1,10 @@
 from pyteal import *
 
 from contracts.config import (
-    POOL_TOKENS_OUTSTANDING_KEY, POOL_TOKEN_KEY, POOL_FUNDING_RESERVES,
+    POOL_TOKENS_OUTSTANDING_KEY, POOL_TOKEN_KEY, POOL_FUNDING_RESERVES, RESULT,
     YES_TOKEN_KEY, YES_TOKENS_OUTSTANDING_KEY, YES_TOKENS_RESERVES,
     NO_TOKEN_KEY, NO_TOKENS_OUTSTANDING_KEY, NO_TOKENS_RESERVES,
-    TOKEN_FUNDING_KEY, TOKEN_FUNDING_RESERVES, RESULT
+    TOKEN_FUNDING_KEY, TOKEN_FUNDING_RESERVES
 )
 
 
@@ -132,14 +132,16 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
     )
 
 
-def mintAndSendNoToken(receiver: TealType.bytes, amount: TealType.uint64) -> Expr:
+def mintAndSendNoToken(
+    receiver: TealType.bytes, amount: TealType.uint64
+) -> Expr:
     funding = AssetHolding.balance(
         Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
     )
     tokensOut: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokensOut.store(
-            App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount ) #* (Int(10000) - App.globalGet(FEE_BPS_KEY)) / Int(10000)
+            App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount ) 
         ),
         App.globalPut(NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
         App.globalPut(NO_TOKENS_RESERVES, App.globalGet(NO_TOKENS_RESERVES) - tokensOut.load()),
@@ -156,14 +158,16 @@ def mintAndSendNoToken(receiver: TealType.bytes, amount: TealType.uint64) -> Exp
     )
 
 
-def mintAndSendYesToken(receiver: TealType.bytes, amount: TealType.uint64) -> Expr:
+def mintAndSendYesToken(
+    receiver: TealType.bytes, amount: TealType.uint64
+) -> Expr:
     funding = AssetHolding.balance(
         Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
     )
     tokensOut: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokensOut.store(
-            (App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount )) #* (Int(10000) - App.globalGet(FEE_BPS_KEY)) / Int(10000)
+            (App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount ))
         ),
         App.globalPut(YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
         App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - tokensOut.load()),
@@ -214,7 +218,16 @@ def redeemToken(
         App.globalPut(
             TOKEN_FUNDING_RESERVES, App.globalGet(TOKEN_FUNDING_RESERVES) - result_token_amount * Int(2)
         ),
-        App.globalPut(
-            YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) - result_token_amount
+        If( App.globalGet(RESULT) == App.globalGet(YES_TOKEN_KEY) )
+        .Then(
+            App.globalPut(
+                YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) - result_token_amount
+            ),
+        )
+        .ElseIf(App.globalGet(RESULT) == App.globalGet(NO_TOKEN_KEY) )
+        .Then(
+            App.globalPut(
+                NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) - result_token_amount
+            ),
         ),
     )
