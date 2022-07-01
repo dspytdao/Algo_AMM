@@ -1,5 +1,4 @@
 import json
-from os import strerror
 from typing import Tuple 
 from base64 import b64decode
 
@@ -422,7 +421,10 @@ def set_result(
 
 
 def closeAmm(
-    client: AlgodClient, appID: int, closer: str, private_key: str
+    client: AlgodClient,
+    appID: int,
+    closer: str,
+    private_key: str
 )-> None:
     """Close an AMM.
     Args:

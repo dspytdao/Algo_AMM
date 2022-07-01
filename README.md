@@ -676,7 +676,7 @@ First, to interact with the smart contract we need to compile and deploy it. `cr
 ```python
 def waitForTransaction(
     client: AlgodClient, txID: str, timeout: int = 10
-) -> json:
+):
 
     lastStatus = client.status()
     lastRound = lastStatus["last-round"]
@@ -726,7 +726,8 @@ def createAmmApp(
     client: AlgodClient,
     token: int,
     minIncrement: int,
-    creator: str, private_key: str
+    creator: str,
+    private_key: str
 ) -> int:
     """Creates a new amm.
     Args:
@@ -782,7 +783,8 @@ def setupAmmApp(
     client: AlgodClient,
     appID: int,
     token: int,
-    funder: str, private_key: str
+    funder: str,
+    private_key: str
 ) -> int:
     """Finish setting up an amm.
     This operation funds the pool account, creates pool token,
@@ -846,8 +848,9 @@ Further we need to opt in to the created new assets:
 def optInToPoolToken(
     client: AlgodClient,
     poolToken: int,
-    account: str, private_key: str
-    ):
+    account: str,
+    private_key: str
+) -> None:
     """Opts into Pool Token
     Args:
         client: An algod client.
@@ -872,7 +875,7 @@ def optInToPoolToken(
 ```python
 def supply(
     client: AlgodClient, appID: int, q: int, supplier: str, private_key: str, \
-    token: int, poolToken: int, yesToken: int, noToken:int
+    token: int, poolToken: int, yesToken: int, noToken: int
 ) -> None:
     """Supply liquidity to the pool.
     """
@@ -919,8 +922,16 @@ def supply(
 
 ```python
 def swap(
-    client: AlgodClient, appID: int, option: str, q: int, supplier: int, \
-    private_key: str, token: int, poolToken: int, yesToken: int, noToken: int
+    client: AlgodClient,
+    appID: int,
+    option: str,
+    q: int,
+    supplier: int,
+    private_key: str,
+    token: int,
+    poolToken: int,
+    yesToken: int,
+    noToken: int
 ) -> None:
 
     if option == 'yes':
@@ -974,8 +985,13 @@ def swap(
 ```python
 
 def withdraw(
-    client: AlgodClient, appID: int, poolToken: int, poolTokenAmount: int,
-    withdrawAccount: str, token: int, private_key: str
+    client: AlgodClient,
+    appID: int,
+    poolToken: int,
+    poolTokenAmount: int,
+    withdrawAccount: str,
+    token: int,
+    private_key: str
 ) -> None:
     """Withdraw liquidity  + rewards from the pool back to supplier.
     Supplier should receive stablecoin + fees proportional to the liquidity share in the pool they choose to withdraw.
@@ -1028,6 +1044,8 @@ def set_result(
     private_key: str,
     second_argument
 ):
+    """ Set the winning token key
+    """
     appAddr = get_application_address(appID)
 
     suggestedParams = client.suggested_params()
@@ -1257,8 +1275,11 @@ AllTokens = 2_000_000
 withdraw(
     client = client,
     appID = appID,
-    poolTokenAmount = AllTokens, poolToken = poolToken,
-    withdrawAccount = creator, private_key = private_key, token = token
+    poolTokenAmount = AllTokens,
+    poolToken = poolToken,
+    withdrawAccount = creator,
+    private_key = private_key,
+    token = token
 )
 
 print("Result")
@@ -1284,7 +1305,9 @@ redeem(
     appID = appID,
     TokenAmount = YesTokensAmount,
     Token = yesToken,
-    withdrawAccount = creator, private_key = private_key, token = token
+    withdrawAccount = creator,
+    private_key = private_key,
+    token = token
 )
 
 # Delete
