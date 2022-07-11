@@ -179,15 +179,16 @@ def setupAmmApp(
 
 def optInToPoolToken(
     client: AlgodClient,
+    account: str,
+    private_key: str,
     poolToken: int,
-    account: str, private_key: str
 ) -> None:
     """Opts into Pool Token
     Args:
         client: An algod client.
         account: The account opting into the token.
-        poolToken: Token id.
         private_key: to sign the tx.
+        poolToken: Token id.
     """
     suggestedParams = client.suggested_params()
 
