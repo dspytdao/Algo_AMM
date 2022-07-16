@@ -344,8 +344,8 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
                 ),
             )
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  amount + App.globalGet(NO_TOKENS_RESERVES) ),
-        App.globalPut(YES_TOKENS_RESERVES, amount + App.globalGet(YES_TOKENS_RESERVES) ),
+        App.globalPut(NO_TOKENS_RESERVES,  amount / Int(2) + App.globalGet(NO_TOKENS_RESERVES) ),
+        App.globalPut(YES_TOKENS_RESERVES, amount / Int(2) + App.globalGet(YES_TOKENS_RESERVES) ),
         App.globalPut(
             POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) + amount
         ),

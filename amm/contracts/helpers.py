@@ -124,8 +124,8 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
                 ),
             )
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  amount + App.globalGet(NO_TOKENS_RESERVES) ),
-        App.globalPut(YES_TOKENS_RESERVES, amount + App.globalGet(YES_TOKENS_RESERVES) ),
+        App.globalPut(NO_TOKENS_RESERVES,  amount / Int(4) + App.globalGet(NO_TOKENS_RESERVES) ),
+        App.globalPut(YES_TOKENS_RESERVES, amount / Int(4) + App.globalGet(YES_TOKENS_RESERVES) ),
         App.globalPut(
             POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) + amount
         ),
@@ -141,7 +141,7 @@ def mintAndSendNoToken(
     tokensOut: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokensOut.store(
-            App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount ) 
+            App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount ) 
         ),
         App.globalPut(NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
         App.globalPut(NO_TOKENS_RESERVES, App.globalGet(NO_TOKENS_RESERVES) - tokensOut.load()),
@@ -167,7 +167,7 @@ def mintAndSendYesToken(
     tokensOut: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokensOut.store(
-            (App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount ))
+            (App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount ))
         ),
         App.globalPut(YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
         App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - tokensOut.load()),
@@ -188,7 +188,6 @@ def withdrawLPToken(
     receiver: TealType.bytes,
     pool_token_amount: TealType.uint64,
 ) -> Expr:
-    
     return Seq(
         sendToken(
             TOKEN_FUNDING_KEY,
@@ -202,8 +201,8 @@ def withdrawLPToken(
             POOL_TOKENS_OUTSTANDING_KEY,
             App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) - pool_token_amount,
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) ),
-        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) ),
+        App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
     )
 
 def redeemToken(
