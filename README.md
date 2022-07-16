@@ -344,8 +344,8 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
                 ),
             )
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  amount / Int(2) + App.globalGet(NO_TOKENS_RESERVES) ),
-        App.globalPut(YES_TOKENS_RESERVES, amount / Int(2) + App.globalGet(YES_TOKENS_RESERVES) ),
+        App.globalPut(NO_TOKENS_RESERVES,  amount / Int(4) + App.globalGet(NO_TOKENS_RESERVES) ),
+        App.globalPut(YES_TOKENS_RESERVES, amount / Int(4) + App.globalGet(YES_TOKENS_RESERVES) ),
         App.globalPut(
             POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) + amount
         ),
@@ -395,8 +395,8 @@ def withdrawLPToken(
             POOL_TOKENS_OUTSTANDING_KEY,
             App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) - pool_token_amount,
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) ),
-        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) ),
+        App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
     )
 
 ```
