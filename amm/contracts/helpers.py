@@ -202,6 +202,8 @@ def withdrawLPToken(
             POOL_TOKENS_OUTSTANDING_KEY,
             App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) - pool_token_amount,
         ),
+        App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) ),
+        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) ),
     )
 
 def redeemToken(

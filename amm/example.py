@@ -7,7 +7,6 @@ from create_asset import create_asset
 from amm_api import createAmmApp, setupAmmApp, optInToPoolToken, \
     supply, withdraw, swap, set_result, closeAmm, redeem
 
-
 load_dotenv()
 
 private_key = os.getenv('key')
