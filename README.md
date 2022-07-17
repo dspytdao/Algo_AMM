@@ -395,8 +395,11 @@ def withdrawLPToken(
             POOL_TOKENS_OUTSTANDING_KEY,
             App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) - pool_token_amount,
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
-        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+        If(App.globalGet(RESULT)==Int(0)).Then(
+            Seq(
+                App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+                App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+            )),
     )
 
 ```
@@ -478,7 +481,7 @@ def mintAndSendYesToken(
     tokensOut: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokensOut.store(
-            (App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount )) #* (Int(10000) - App.globalGet(FEE_BPS_KEY)) / Int(10000)
+            (App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount ))
         ),
         App.globalPut(YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
         App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - tokensOut.load()),

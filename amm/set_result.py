@@ -3,9 +3,7 @@ from dotenv import load_dotenv
 from algosdk import account
 from algosdk.v2client import algod
 
-from create_asset import create_asset
-from amm_api import createAmmApp, setupAmmApp, optInToPoolToken, \
-    supply, withdraw, swap, set_result, closeAmm, redeem
+from amm_api import set_result
 
 load_dotenv()
 
@@ -24,6 +22,7 @@ headers = {
 client = algod.AlgodClient(algod_token, algod_address, headers)
 
 appID = 99887636
+
 #set winner
 
 set_result(

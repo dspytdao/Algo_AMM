@@ -201,15 +201,20 @@ def withdrawLPToken(
             POOL_TOKENS_OUTSTANDING_KEY,
             App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) - pool_token_amount,
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
-        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+        #Add If
+
+        If(App.globalGet(RESULT)==Int(0)).Then(
+            Seq(
+                App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+                App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+            )),
     )
+
 
 def redeemToken(
     receiver: TealType.bytes,
     result_token_amount: TealType.uint64,
 ) -> Expr:
-    
     return Seq(
         sendToken(
             TOKEN_FUNDING_KEY,
