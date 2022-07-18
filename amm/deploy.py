@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from algosdk import account
 from algosdk.v2client import algod
-
+from algosdk.logic import get_application_address
 from amm_api import createAmmApp, optInToPoolToken
 
 
@@ -22,8 +22,6 @@ headers = {
 # initialize an algodClient
 client = algod.AlgodClient(algod_token, algod_address, headers)
 
-# create (stable) asset
-#token = create_asset(client, private_key)
 stableToken = 10458941
 
 optInToPoolToken(client, creator, private_key, stableToken)
@@ -37,3 +35,5 @@ appID = createAmmApp(
 )
 
 print(appID)
+
+print(get_application_address(appID))

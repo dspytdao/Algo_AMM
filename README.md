@@ -324,7 +324,11 @@ def validateTokenReceived(
     )
 
 def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> Expr:
+    ratio: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
+        ratio.store(
+            (Int(1) + App.globalGet(NO_TOKENS_RESERVES)) / (Int(1)  + App.globalGet(YES_TOKENS_RESERVES))
+        ),
         If(App.globalGet(POOL_FUNDING_RESERVES) > Int(0))
         .Then(
             Seq(
@@ -344,8 +348,8 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
                 ),
             )
         ),
-        App.globalPut(NO_TOKENS_RESERVES,  amount / Int(4) + App.globalGet(NO_TOKENS_RESERVES) ),
-        App.globalPut(YES_TOKENS_RESERVES, amount / Int(4) + App.globalGet(YES_TOKENS_RESERVES) ),
+        App.globalPut(NO_TOKENS_RESERVES, ratio.load()  * (amount / Int(4)) + App.globalGet(NO_TOKENS_RESERVES) ),
+        App.globalPut(YES_TOKENS_RESERVES, ( Int(1) / ratio.load() )* (amount / Int(4)) + App.globalGet(YES_TOKENS_RESERVES) ),
         App.globalPut(
             POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) + amount
         ),
@@ -381,7 +385,7 @@ def withdrawLPToken(
     receiver: TealType.bytes,
     pool_token_amount: TealType.uint64,
 ) -> Expr:
-
+    ratio: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         sendToken(
             TOKEN_FUNDING_KEY,
@@ -397,11 +401,13 @@ def withdrawLPToken(
         ),
         If(App.globalGet(RESULT)==Int(0)).Then(
             Seq(
-                App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
-                App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) ),
+                ratio.store(
+                    (Int(1) + App.globalGet(NO_TOKENS_RESERVES)) / (Int(1) + App.globalGet(YES_TOKENS_RESERVES))
+                ),
+                App.globalPut(NO_TOKENS_RESERVES,  App.globalGet(NO_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) * ratio.load() ),
+                App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)) / Int(4) * (Int(1)/ratio.load()) ),
             )),
     )
-
 ```
 
 # On Swap
