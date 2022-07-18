@@ -4,7 +4,11 @@
 
 ## Summary
 
-The application lets people trade on the outcomes of events, and follow the odds to garner accurate insights about the future. Users buy or sell Voting Shares, which can be redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect. Owners of outcome shares are never locked in and can sell their position at any time. The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
+The application lets people trade on the outcomes of events, and follow the odds to garner accurate insights about the future. 
+Users buy or sell Voting Shares, which can be redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect. 
+The core feature of the app is that we protect the owners of outcome shares by keeping the reserves of stable assets, primarily in case of liqudity drain.
+
+The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
 
 ![](https://imgur.com/FshfngB.png)
 
