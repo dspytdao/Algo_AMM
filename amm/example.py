@@ -120,10 +120,8 @@ swap(
 print("Withdrawing")
 
 AllTokens = 2_000_000
-#####
 
-# pool
-####
+""" 
 withdraw(
     client = client,
     appID = appID,
@@ -166,4 +164,4 @@ closeAmm(
     appID = appID,
     closer=creator,
     private_key = private_key
-)
+) """
