@@ -12,6 +12,10 @@ The goal is, by harnessing the power of free markets to aggregate collective kno
 
 ![](https://imgur.com/HILKB03.png)
 
+[![Everything Is AWESOME](https://yt-embed.herokuapp.com/embed?v=KrK5s9h8UfY)](https://youtu.be/KrK5s9h8UfY "Everything Is AWESOME")
+
+[Project Slides Deck](https://docs.google.com/presentation/d/1FBchISurC6Fsy-iEkmQ4gggEs7i6D4pRHab8gwOEyqk/edit?usp=sharing)
+
 We wrote contract for Prediction Market Constant Function Automated Market Maker with the help of PyTeal and Py-algorand-sdk.
 
 The front end application is written with react and vite.
