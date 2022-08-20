@@ -5,8 +5,12 @@
 ## Summary
 
 The application lets people trade on the outcomes of events, and follow the odds to garner accurate insights about the future.
-Users buy or sell Voting Shares, which can be redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect.
-The core feature of the app is that we protect the owners of outcome shares by keeping the reserves of stable assets, primarily in case of liqudity drain.
+
+Liquidity Providers supply stable coins in return for the liquidity shares.
+
+Meanwhile, Users buy or sell Voting Shares, which are redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect.
+
+The core feature of the app is that we protect the owners of Voting shares by keeping the reserves of stable assets, primarily in case of liqudity drain.
 
 The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
 
@@ -19,17 +23,19 @@ The goal is, by harnessing the power of free markets to aggregate collective kno
 We wrote contract for Prediction Market Constant Function Automated Market Maker with the help of PyTeal and Py-algorand-sdk.
 
 The front end application is written with react and vite.
-The repository for the front-End is avalaible here: https://github.com/dspytdao/algo-amm-frontend
+The repository for the Front-End is avalaible here: https://github.com/dspytdao/algo-amm-frontend
 
 ## Overview
 
-Constant Function Automated Market Maker (AMM) contract provides configuration option and creates a market for an event that has a binary outcome.
+Constant Function Automated Market Maker (AMM) contract provides configuration options and creates a market for an event that has a binary outcome.
 
-Liquidity Pool provides a foundation for users to purchase and redeem spawned tokens once the event has been resolved. The Liquidity Pool supports a constant reserve ratio for stable price discovery and protection of users. The liquidity provided allows to spawn two tokens in equal amount in 50%/50% of the liquidity supplied,
+Liquidity Pool provides a foundation for users to purchase and redeem spawned tokens once the event has been resolved. The Liquidity Pool supports a constant reserve ratio for stable price discovery and protection from liquidity drain. The liquidity provided allows to spawn two tokens in equal amount in 25%/25% proportion of the liquidity supplied.
 
-The two tokens represent binary outcomes. Once the event has occured the price for one token should resolve to 1, while 0 for another. The purchase price for each token is determined by equation: x + y = k. Where x is the amount of A tokens in the AMM, y is the amount of B tokens in the AMM.
+The purchase price for each token is determined by equation: x + y = k. Where x is the amount of A tokens in the AMM, y is the amount of B tokens in the AMM.
 
-Funds can only be released after the creator of the contract moderated the outcome.
+Once the event has occured the price for one token should resolve to 1, while 0 for another.
+
+Liqudity Shares and Voting Shares can only be released after the creator of the contract moderated the outcome.
 
 ## Requirements
 
@@ -42,17 +48,14 @@ Funds can only be released after the creator of the contract moderated the outco
 
 ## Background
 
-PyTeal is a python library for generating TEAL programs. PyTeal is used for writing smart contracts on the Algorand blockchain. The TEAL code will be deployed using the Algorand JavaScript SDK.
-
+PyTeal is a python library for generating TEAL programs. PyTeal is used for writing smart contracts on the Algorand blockchain.
 To interact with the smart contract the Python SDK will be used to compile and deploy the PyTeal smart contract code.
-
-Code is available at this GitHub Repository.
 
 # Steps
 
 # Project Setup
 
-We setup Python virtual environment. The following commands will install and activate the virtual environment and then install needed dependencies.
+We setup Python virtual environment. The following commands will install and activate the virtual environment and then install dependencies.
 
 ## Installing with Virtual environment
 
@@ -87,7 +90,7 @@ cd contracts
 touch amm.py config.py helpers.py __init__.py
 ```
 
-In `amm.py` we will keep the high-level logic of the contract, `helpers.py` will contain lower level methods and `config.py` will keep track of global variable and key configuration variables.
+In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains lower level methods and `config.py` keeps track of global variable and key configuration variables.
 
 # PyTeal Contract Configuration File
 
