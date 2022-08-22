@@ -4,13 +4,13 @@
 
 ## Summary
 
-The application lets people trade on the outcomes of events, and follow the odds to garner accurate insights about the future.
+Algo AMM allows you to trade on the outcomes of events, and follow the odds to garner accurate insights about the future.
 
 Liquidity Providers supply stable coins in return for the liquidity shares.
 
-Meanwhile, Users buy or sell Voting Shares, which are redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect.
+The liquidity lets users to buy or sell Voting Shares, which are redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect.
 
-The core feature of the app is that we protect the owners of Voting shares by keeping the reserves of stable assets, primarily in case of liqudity drain.
+The core feature of the app is that we protect the owners of Voting shares by keeping the reserves of stable assets, primarily in case of liquidity drain.
 
 The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
 
@@ -35,7 +35,7 @@ The purchase price for each token is determined by equation: x + y = k. Where x 
 
 Once the event has occured the price for one token should resolve to 1, while 0 for another.
 
-Liqudity Shares and Voting Shares can only be released after the creator of the contract moderated the outcome.
+Liquidity Shares and Voting Shares can only be released after the creator of the contract moderated the outcome.
 
 ## Requirements
 
@@ -576,7 +576,7 @@ def get_redemption():
 
 The code runs when an account calls `Txn.application_args[0]` that equals to `Bytes("redeem")` into the smart contract. It returns true if the token received by the smart contract is the winner decided in `on_result` part of the program.
 
-`redeemToken` tracks the withdrawal of Yes/No Tokens. Since the initial distribution of liqudity provided was distribtued in 50%/50% towards each token, after the deadline the winning token should be worth double its initial price.
+`redeemToken` tracks the withdrawal of Yes/No Tokens. Since the initial distribution of liquidity provided was distribtued in 50%/50% towards each token, after the deadline the winning token should be worth double its initial price.
 
 ```python
 def redeemToken(
@@ -899,7 +899,7 @@ def optInToPoolToken(
     waitForTransaction(client, signedOptInTxn.get_txid())
 ```
 
-## Supplying AMM with Liqudity
+## Supplying AMM with Liquidity
 
 ```python
 def supply(
