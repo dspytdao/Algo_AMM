@@ -96,7 +96,7 @@ def get_withdraw():
 
     on_withdraw = Seq(
         Assert(
-            validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),    
+            validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
         ),
         withdrawLPToken(
             Txn.sender(),
@@ -109,6 +109,7 @@ def get_withdraw():
 
 
 def get_result():
+    """sets result"""
     result = Txn.application_args[1]
 
     on_result = Seq(
@@ -158,7 +159,7 @@ def get_redemption():
 
 
 def approval_program():
-
+    """main"""
     on_create = Seq(
         App.globalPut(CREATOR_KEY, Txn.application_args[0]),
         App.globalPut(TOKEN_FUNDING_KEY, Btoi(Txn.application_args[1])),
@@ -214,6 +215,7 @@ def approval_program():
 
 
 def clear_program():
+    """clear program"""
     return Approve()
 
 if __name__ == "__main__":
