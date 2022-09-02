@@ -170,7 +170,7 @@ def setup_amm_app(
 
     ids = {}
 
-    for i in range(len(glob_state)):
+    for i, _ in enumerate(glob_state):
         if b64decode(glob_state[i]['key']) == b"pool_token_key":
             ids['pool_token_key'] = glob_state[i]['value']['uint']
         elif b64decode(glob_state[i]['key']) == b"yes_token_key":
@@ -349,7 +349,7 @@ def withdraw(
 
 
 def redeem(
-    client: AlgodClient, app_id: int, token_in:int, token_amount: int,
+    client: AlgodClient, app_id: int, token_in: int, token_amount: int,
     withdrawal_account: str, token_out: int, private_key: str
 ) -> None:
     """reedems """

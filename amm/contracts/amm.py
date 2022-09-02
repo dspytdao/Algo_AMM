@@ -224,10 +224,10 @@ def clear_program():
     return Approve()
 
 if __name__ == "__main__":
-    with open("deposit_approval.teal", "w") as f:
+    with open("deposit_approval.teal", "w", encoding="utf-8") as f:
         COMPILED = compileTeal(approval_program(), mode=Mode.Application, version=6)
         f.write(COMPILED)
 
-    with open("deposit_clear.teal", "w") as f:
+    with open("deposit_clear.teal", "w", encoding="utf-8") as f:
         COMPILED = compileTeal(clear_program(), mode=Mode.Application, version=6)
         f.write(COMPILED)
