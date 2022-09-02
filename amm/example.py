@@ -63,7 +63,7 @@ POOL_TOKEN_FIRST_AMOUNT = 500_000
 supply(
     client=client,
     appID=appID,
-    q=POOL_TOKEN_FIRST_AMOUNT,
+    quantity=POOL_TOKEN_FIRST_AMOUNT,
     supplier=creator,
     private_key=private_key,
     token=token,
@@ -77,8 +77,8 @@ POOL_TOKEN_SECOND_AMOUNT = 1_500_000
 
 supply(
     client=client,
-    appID=appID,
-    q=POOL_TOKEN_SECOND_AMOUNT,
+    app_id=appID,
+    quantity=POOL_TOKEN_SECOND_AMOUNT,
     supplier=creator,
     private_key=private_key,
     token=token,
@@ -95,7 +95,7 @@ swap(
     client=client,
     appID=appID,
     option="yes",
-    q=YES_TOKEN_AMOUNT,
+    quantity==YES_TOKEN_AMOUNT,
     supplier=creator,
     private_key=private_key,
     token=token,

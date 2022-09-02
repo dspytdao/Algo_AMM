@@ -19,6 +19,7 @@ from amm.contracts.config import (
 )
 
 def get_setup():
+    """sets up contract"""
     pool_token_id = App.globalGetEx(Global.current_application_id(), POOL_TOKEN_KEY)
     pool_tokens_outstanding = App.globalGetEx(
         Global.current_application_id(), POOL_TOKENS_OUTSTANDING_KEY
@@ -39,6 +40,7 @@ def get_setup():
     return on_setup
 
 def get_supply():
+    """liquidity supply"""
     token_txn_index = Txn.group_index() - Int(1)
 
     on_supply = Seq(
@@ -59,6 +61,7 @@ def get_supply():
 
 
 def get_swap():
+    """option swap"""
     token_txn_index = Txn.group_index() - Int(1)
     option = Txn.application_args[1]
     on_swap = Seq(
@@ -92,6 +95,7 @@ def get_swap():
 
 
 def get_withdraw():
+    """liquidity withdrawal"""
     pool_token_txn_index = Txn.group_index() - Int(1)
 
     on_withdraw = Seq(
@@ -140,6 +144,7 @@ def get_result():
 
 
 def get_redemption():
+    """reedems winning tokens"""
     token_txn_index = Txn.group_index() - Int(1)
 
     on_redemption = Seq(
