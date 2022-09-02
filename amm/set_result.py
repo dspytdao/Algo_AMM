@@ -24,7 +24,7 @@ APP_ID = 100248351
 
 set_result(
     client = client,
-    appID = APP_ID,
+    app_id = APP_ID,
     second_argument = b"yes",
     funder = creator,
     private_key = private_key

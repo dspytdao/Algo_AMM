@@ -5,8 +5,8 @@ from pyteal import App, Global, Assert, Seq, And, Not, Txn, Int,\
 from amm.contracts.helpers import (
     validateTokenReceived, mintAndSendPoolToken,
     mintAndSendNoToken, mintAndSendYesToken,
-    optIn, createPoolToken, withdrawLPToken,
-    createNoToken, createYesToken, redeemToken
+    opt_in, createPoolToken, withdrawLPToken,
+    createNoToken, createYesToken, redeem_token
     )
 
 from amm.contracts.config import (
@@ -30,11 +30,11 @@ def get_setup():
         Assert(Not(pool_token_id.hasValue())),
         Assert(Not(pool_tokens_outstanding.hasValue())),
         createPoolToken(TOKEN_DEFAULT_AMOUNT),
-        optIn(TOKEN_FUNDING_KEY),
+        opt_in(TOKEN_FUNDING_KEY),
         createNoToken(TOKEN_DEFAULT_AMOUNT),
-        optIn(NO_TOKEN_KEY),
+        opt_in(NO_TOKEN_KEY),
         createYesToken(TOKEN_DEFAULT_AMOUNT),
-        optIn(YES_TOKEN_KEY),
+        opt_in(YES_TOKEN_KEY),
         Approve(),
     )
     return on_setup
@@ -153,7 +153,7 @@ def get_redemption():
                 validateTokenReceived(token_txn_index, RESULT),
             )
         ),
-        redeemToken(
+        redeem_token(
             Txn.sender(),
             Gtxn[token_txn_index].asset_amount(),
         ),

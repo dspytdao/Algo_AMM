@@ -32,7 +32,7 @@ appID = create_amm_app(
     creator=creator,
     private_key=private_key,
     token=token,
-    minIncrement=1000,
+    min_increment=1000,
 )
 
 print(f"Alice is setting up and funding amm {appID}")
@@ -62,13 +62,14 @@ POOL_TOKEN_FIRST_AMOUNT = 500_000
 
 supply(
     client=client,
-    appID=appID,
+    app_id=appID,
     quantity=POOL_TOKEN_FIRST_AMOUNT,
     supplier=creator,
     private_key=private_key,
     token=token,
-    poolToken=poolToken,
-    yesToken=yesToken, noToken=noToken
+    pool_token=poolToken,
+    yes_token=yesToken,
+    no_token=noToken
 )
 
 print("Supplying AMM with more tokens")
@@ -82,8 +83,9 @@ supply(
     supplier=creator,
     private_key=private_key,
     token=token,
-    poolToken=poolToken,
-    yesToken=yesToken, noToken=noToken
+    pool_token=poolToken,
+    yes_token=yesToken,
+    no_token=noToken
 )
 
 print("Swapping")
@@ -93,29 +95,29 @@ YES_TOKEN_AMOUNT = 100_000
 # buy yes token
 swap(
     client=client,
-    appID=appID,
+    app_id=appID,
     option="yes",
-    quantity==YES_TOKEN_AMOUNT,
+    quantity=YES_TOKEN_AMOUNT,
     supplier=creator,
     private_key=private_key,
     token=token,
-    poolToken=poolToken,
-    yesToken=yesToken,
-    noToken=noToken
+    pool_token=poolToken,
+    yes_token=yesToken,
+    no_token=noToken
 )
 
 #buy no token
 swap(
     client=client,
-    appID=appID,
+    app_id=appID,
     option="no",
-    q=YES_TOKEN_AMOUNT,
+    quantity=YES_TOKEN_AMOUNT,
     supplier=creator,
     private_key=private_key,
     token=token,
-    poolToken=poolToken,
-    yesToken=yesToken,
-    noToken=noToken
+    pool_token=poolToken,
+    yes_token=yesToken,
+    no_token=noToken
 )
 
 print("Withdrawing")
