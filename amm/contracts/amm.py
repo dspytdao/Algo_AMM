@@ -1,4 +1,6 @@
-from pyteal import *
+"""main"""
+from pyteal import App, Global, Assert, Seq, And, Not, Txn, Int,\
+    Approve, Gtxn, If, Bytes, Reject, Btoi, Cond, Or, OnComplete, compileTeal, Mode
 
 from contracts.helpers import (
     validateTokenReceived, mintAndSendPoolToken,
@@ -16,13 +18,11 @@ from contracts.config import (
     RESULT
 )
 
-
 def get_setup():
     pool_token_id = App.globalGetEx(Global.current_application_id(), POOL_TOKEN_KEY)
     pool_tokens_outstanding = App.globalGetEx(
         Global.current_application_id(), POOL_TOKENS_OUTSTANDING_KEY
     )
-    
     on_setup = Seq(
         pool_token_id,
         pool_tokens_outstanding,
@@ -60,8 +60,7 @@ def get_supply():
 
 def get_swap():
     token_txn_index = Txn.group_index() - Int(1)
-    option = Txn.application_args[1]  
-    
+    option = Txn.application_args[1]
     on_swap = Seq(
         Assert(
             validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
@@ -94,7 +93,7 @@ def get_swap():
 
 def get_withdraw():
     pool_token_txn_index = Txn.group_index() - Int(1)
-    
+
     on_withdraw = Seq(
         Assert(
             validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),    
@@ -111,7 +110,7 @@ def get_withdraw():
 
 def get_result():
     result = Txn.application_args[1]
-    
+
     on_result = Seq(
         Assert(
             Txn.sender() == App.globalGet(CREATOR_KEY)
@@ -141,7 +140,7 @@ def get_result():
 
 def get_redemption():
     token_txn_index = Txn.group_index() - Int(1)
-    
+
     on_redemption = Seq(
         Assert(
             And(
@@ -159,7 +158,7 @@ def get_redemption():
 
 
 def approval_program():
-    
+
     on_create = Seq(
         App.globalPut(CREATOR_KEY, Txn.application_args[0]),
         App.globalPut(TOKEN_FUNDING_KEY, Btoi(Txn.application_args[1])),
@@ -176,7 +175,7 @@ def approval_program():
     on_withdraw = get_withdraw()
     on_redemption = get_redemption()
     on_result = get_result()
-    
+
     on_call_method = Txn.application_args[0]
     on_call = Cond(
         [on_call_method == Bytes("setup"), on_setup],
@@ -219,9 +218,9 @@ def clear_program():
 
 if __name__ == "__main__":
     with open("deposit_approval.teal", "w") as f:
-        compiled = compileTeal(approval_program(), mode=Mode.Application, version=6)
-        f.write(compiled)
+        COMPILED = compileTeal(approval_program(), mode=Mode.Application, version=6)
+        f.write(COMPILED)
 
     with open("deposit_clear.teal", "w") as f:
-        compiled = compileTeal(clear_program(), mode=Mode.Application, version=6)
-        f.write(compiled)
+        COMPILED = compileTeal(clear_program(), mode=Mode.Application, version=6)
+        f.write(COMPILED)

@@ -46,7 +46,7 @@ def create_asset(client, private_key):
     txid = client.send_transaction(stxn)
     print(f"Signed transaction with txID: {txid}")
     # Wait for the transaction to be confirmed
-    response = wait_for_confirmation(client, txid)  
+    response = wait_for_confirmation(client, txid)
     print("TXID: ", txid)
     confirmed_round = response['confirmed-round']
     print(f"Result confirmed in round: {confirmed_round}")

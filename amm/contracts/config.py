@@ -1,3 +1,5 @@
+"""globals"""
+
 from pyteal import Bytes, Int
 
 CREATOR_KEY = Bytes("creator_key")

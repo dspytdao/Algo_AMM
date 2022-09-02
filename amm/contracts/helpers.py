@@ -1,4 +1,7 @@
-from pyteal import *
+"""helper pyteal functions"""
+
+from pyteal import App, Global, TxnType, Seq, And, TealType, Txn, Int, Expr,\
+    Gtxn, If, Bytes, InnerTxnBuilder, TxnField, InnerTxn, ScratchVar, AssetHolding
 
 from contracts.config import (
     POOL_TOKENS_OUTSTANDING_KEY, POOL_TOKEN_KEY, POOL_FUNDING_RESERVES, RESULT,
@@ -142,14 +145,14 @@ def mintAndSendNoToken(
     funding = AssetHolding.balance(
         Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
     )
-    tokensOut: ScratchVar = ScratchVar(TealType.uint64)
+    tokens_out: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
-        tokensOut.store(
-            App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount ) 
+        tokens_out.store(
+            App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount )
         ),
-        App.globalPut(NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
-        App.globalPut(NO_TOKENS_RESERVES, App.globalGet(NO_TOKENS_RESERVES) - tokensOut.load()),
-        sendToken(NO_TOKEN_KEY, receiver, tokensOut.load()),
+        App.globalPut(NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokens_out.load()),
+        App.globalPut(NO_TOKENS_RESERVES, App.globalGet(NO_TOKENS_RESERVES) - tokens_out.load()),
+        sendToken(NO_TOKEN_KEY, receiver, tokens_out.load()),
         If(App.globalGet(NO_TOKENS_OUTSTANDING_KEY) > App.globalGet(YES_TOKENS_OUTSTANDING_KEY))
         .Then(
             App.globalPut(TOKEN_FUNDING_RESERVES, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) * Int(2))
@@ -168,14 +171,14 @@ def mintAndSendYesToken(
     funding = AssetHolding.balance(
         Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
     )
-    tokensOut: ScratchVar = ScratchVar(TealType.uint64)
+    tokens_out: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
-        tokensOut.store(
+        tokens_out.store(
             (App.globalGet(YES_TOKENS_RESERVES) * amount / (App.globalGet(NO_TOKENS_RESERVES) + amount ))
         ),
-        App.globalPut(YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) + tokensOut.load()),
-        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - tokensOut.load()),
-        sendToken(YES_TOKEN_KEY, receiver, tokensOut.load()),
+        App.globalPut(YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) + tokens_out.load()),
+        App.globalPut(YES_TOKENS_RESERVES, App.globalGet(YES_TOKENS_RESERVES) - tokens_out.load()),
+        sendToken(YES_TOKEN_KEY, receiver, tokens_out.load()),
         If(App.globalGet(YES_TOKENS_OUTSTANDING_KEY) > App.globalGet(NO_TOKENS_OUTSTANDING_KEY))
         .Then(
             App.globalPut(TOKEN_FUNDING_RESERVES, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) * Int(2))
@@ -197,7 +200,7 @@ def withdrawLPToken(
         sendToken(
             TOKEN_FUNDING_KEY,
             receiver,
-            App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY), 
+            App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY),
         ),
         App.globalPut(
             POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) - (App.globalGet(POOL_FUNDING_RESERVES) * pool_token_amount / App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)),
@@ -228,18 +231,21 @@ def redeemToken(
             result_token_amount * Int(2)
         ),
         App.globalPut(
-            TOKEN_FUNDING_RESERVES, App.globalGet(TOKEN_FUNDING_RESERVES) - result_token_amount * Int(2)
+            TOKEN_FUNDING_RESERVES,
+            App.globalGet(TOKEN_FUNDING_RESERVES) - result_token_amount * Int(2)
         ),
         If( App.globalGet(RESULT) == App.globalGet(YES_TOKEN_KEY) )
         .Then(
             App.globalPut(
-                YES_TOKENS_OUTSTANDING_KEY, App.globalGet(YES_TOKENS_OUTSTANDING_KEY) - result_token_amount
+                YES_TOKENS_OUTSTANDING_KEY,
+                App.globalGet(YES_TOKENS_OUTSTANDING_KEY) - result_token_amount
             ),
         )
         .ElseIf(App.globalGet(RESULT) == App.globalGet(NO_TOKEN_KEY) )
         .Then(
             App.globalPut(
-                NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) - result_token_amount
+                NO_TOKENS_OUTSTANDING_KEY,
+                App.globalGet(NO_TOKENS_OUTSTANDING_KEY) - result_token_amount
             ),
         ),
     )
