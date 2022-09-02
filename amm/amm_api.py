@@ -1,5 +1,6 @@
+"""this file is to connect to the contract"""
 import json
-from typing import Tuple 
+from typing import Tuple
 from base64 import b64decode
 
 from pyteal import compileTeal, Mode, Expr
@@ -19,43 +20,46 @@ MIN_BALANCE_REQUIREMENT = (
 )
 
 
-def waitForTransaction(
-    client: AlgodClient, txID: str, timeout: int = 10
+def wait_for_transaction(
+    client: AlgodClient, tx_id: str, timeout: int = 10
 ) -> json:
+    """monitors tx
+    """
 
-    lastStatus = client.status()
-    lastRound = lastStatus["last-round"]
-    startRound = lastRound
+    last_status = client.status()
+    last_round = last_status["last-round"]
+    start_round= last_round
 
-    while lastRound < startRound + timeout:
-        pending_txn = client.pending_transaction_info(txID)
+    while last_round < start_round + timeout:
+        pending_txn = client.pending_transaction_info(tx_id)
 
         if pending_txn.get("confirmed-round", 0) > 0:
             return pending_txn
 
         if pending_txn["pool-error"]:
-            raise Exception("Pool error: {}".format(pending_txn["pool-error"]))
+            raise Exception("Pool error:")
 
-        lastStatus = client.status_after_block(lastRound + 1)
+        last_status= client.status_after_block(last_round + 1)
 
-        lastRound += 1
+        last_round += 1
 
     raise Exception(
-        "Transaction {} not confirmed after {} rounds".format(txID, timeout)
+        f"Transaction {tx_id} not confirmed after {timeout} rounds"
     )
 
 
-def fullyCompileContract(
+def fully_compile_contract(
     client: AlgodClient, contract: Expr
 ) -> bytes:
-    
+    """compiles teal
+    """
     teal = compileTeal(contract, mode=Mode.Application, version=6)
     response = client.compile(teal)
 
     return b64decode(response["result"])
 
 
-def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
+def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
     """Get the compiled TEAL contracts for the amm.
     Args:q
         client: An algod client that has the ability to compile TEAL programs.
@@ -64,16 +68,16 @@ def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
         second is the clear state program.
     """
 
-    APPROVAL_PROGRAM = fullyCompileContract(client, approval_program())
-    CLEAR_STATE_PROGRAM = fullyCompileContract(client, clear_program())
+    approval_progra_compiled = fully_compile_contract(client, approval_program())
+    clear_state_program_compiled = fully_compile_contract(client, clear_program())
 
-    return APPROVAL_PROGRAM, CLEAR_STATE_PROGRAM
+    return approval_progra_compiled, clear_state_program_compiled
 
 
-def createAmmApp(
+def create_amm_app(
     client: AlgodClient,
     token: int,
-    minIncrement: int,
+    min_increment: int,
     creator: str, private_key: str
 ) -> int:
     """Creates a new amm.
@@ -81,20 +85,20 @@ def createAmmApp(
         client: An algod client.
         creator: The account that will create the amm application.
         token: The id of token A in the liquidity pool,
-        minIncrement: int that
+        min_increment: int that
         private_key to sign the tx
     Returns:
         The ID of the newly created amm app.
     """
-    approval, clear = getContracts(client)
+    approval, clear = get_contracts(client)
 
-    globalSchema = transaction.StateSchema(num_uints=13, num_byte_slices=1)
-    localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
+    global_schema = transaction.StateSchema(num_uints=13, num_byte_slices=1)
+    local_schema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
     app_args = [
         encoding.decode_address(creator),
         token.to_bytes(8, "big"),
-        minIncrement.to_bytes(8, "big"),
+        min_increment.to_bytes(8, "big"),
     ]
 
     txn = transaction.ApplicationCreateTxn(
@@ -102,24 +106,24 @@ def createAmmApp(
         on_complete=transaction.OnComplete.NoOpOC,
         approval_program=approval,
         clear_program=clear,
-        global_schema=globalSchema,
-        local_schema=localSchema,
+        global_schema=global_schema,
+        local_schema=local_schema,
         app_args=app_args,
         sp=client.suggested_params(),
     )
 
-    signedTxn = txn.sign(private_key)
+    signed_tx = txn.sign(private_key)
 
-    client.send_transaction(signedTxn)
+    client.send_transaction(signed_tx)
 
-    response = waitForTransaction(client, signedTxn.get_txid())
+    response = wait_for_transaction(client, signed_tx.get_txid())
     assert response["application-index"] is not None and response["application-index"] > 0
     return response["application-index"]
 
 
-def setupAmmApp(
+def setup_amm_app(
     client: AlgodClient,
-    appID: int,
+    app_id: int,
     token: int,
     funder: str, private_key: str
 ) -> int:
@@ -128,41 +132,41 @@ def setupAmmApp(
     and opts app into tokens A and B, all in one atomic transaction group.
     Args:
         client: An algod client.
-        appID: The app ID of the amm.
+        app_id: The app ID of the amm.
         funder: The account providing the funding for the escrow account.
         token: Token id.
         private_key to sign the tx
     Return: pool token id
     """
-    appAddr = get_application_address(appID)
+    app_addr = get_application_address(app_id)
 
-    suggestedParams = client.suggested_params()
+    suggested_params = client.suggested_params()
 
-    fundAppTxn = transaction.PaymentTxn(
+    fund_app_tx = transaction.PaymentTxn(
         sender=funder,
-        receiver=appAddr,
+        receiver=app_addr,
         amt=MIN_BALANCE_REQUIREMENT,
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
-    setupTxn = transaction.ApplicationCallTxn(
+    setup_tx = transaction.ApplicationCallTxn(
         sender=funder,
-        index=appID,
+        index=app_id,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[b"setup"],
         foreign_assets=[token],
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
-    transaction.assign_group_id([fundAppTxn, setupTxn])
+    transaction.assign_group_id([fund_app_tx, setup_tx])
 
-    signedFundAppTxn = fundAppTxn.sign(private_key)
-    signedSetupTxn = setupTxn.sign(private_key)
+    signed_fund_spp_txn = fund_app_tx.sign(private_key)
+    signed_setup_tx = setup_tx.sign(private_key)
 
-    client.send_transactions([signedFundAppTxn, signedSetupTxn])
+    client.send_transactions([signed_fund_spp_txn, signed_setup_tx])
 
-    waitForTransaction(client, signedFundAppTxn.get_txid())
-    glob_state = client.application_info(appID)['params']['global-state']
+    wait_for_transaction(client, signed_fund_spp_txn.get_txid())
+    glob_state = client.application_info(app_id)['params']['global-state']
 
     ids = {}
 
@@ -177,81 +181,82 @@ def setupAmmApp(
     return ids
 
 
-def optInToPoolToken(
+def opt_in_to_pool_token(
     client: AlgodClient,
     account: str,
     private_key: str,
-    poolToken: int,
+    pool_token: int,
 ) -> None:
     """Opts into Pool Token
     Args:
         client: An algod client.
         account: The account opting into the token.
         private_key: to sign the tx.
-        poolToken: Token id.
+        pool_token: Token id.
     """
-    suggestedParams = client.suggested_params()
+    suggested_params = client.suggested_params()
 
-    optInTxn = transaction.AssetOptInTxn(
-        sender=account, index=poolToken, sp=suggestedParams
+    optin_tx = transaction.AssetOptInTxn(
+        sender=account, index=pool_token, sp=suggested_params
     )
 
-    signedOptInTxn = optInTxn.sign(private_key)
+    signed_opt_in_tx = optin_tx.sign(private_key)
 
-    client.send_transaction(signedOptInTxn)
-    waitForTransaction(client, signedOptInTxn.get_txid())
+    client.send_transaction(signed_opt_in_tx)
+    wait_for_transaction(client, signed_opt_in_tx.get_txid())
 
 
 def supply(
-    client: AlgodClient, appID: int, q: int, supplier: str, private_key: str, \
-    token: int, poolToken: int, yesToken: int, noToken:int
+    client: AlgodClient, app_id: int, quantity: int, supplier: str, private_key: str, \
+    token: int, pool_token: int, yes_token: int, no_token:int
 ) -> None:
     """Supply liquidity to the pool.
     """
-    appAddr = get_application_address(appID)
-    suggestedParams = client.suggested_params()
+    app_addr = get_application_address(app_id)
+    suggested_params = client.suggested_params()
 
     # pay for the fee incurred by AMM for sending back the pool token
-    feeTxn = transaction.PaymentTxn(
+    fee_tx = transaction.PaymentTxn(
         sender=supplier,
-        receiver=appAddr,
+        receiver=app_addr,
         amt=MIN_BALANCE_REQUIREMENT,
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
-    tokenTxn = transaction.AssetTransferTxn(
+    token_tx = transaction.AssetTransferTxn(
         sender=supplier,
-        receiver=appAddr,
+        receiver=app_addr,
         index=token,
-        amt=q,
-        sp=suggestedParams,
+        amt=quantity,
+        sp=suggested_params,
     )
 
-    appCallTxn = transaction.ApplicationCallTxn(
+    app_call_tx = transaction.ApplicationCallTxn(
         sender=supplier,
-        index=appID,
+        index=app_id,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[b"supply"],
-        foreign_assets=[token, poolToken, yesToken, noToken],
-        sp=suggestedParams,
+        foreign_assets=[token, pool_token, yes_token, no_token],
+        sp=suggested_params,
     )
 
-    transaction.assign_group_id([feeTxn, tokenTxn, appCallTxn])
-    signedFeeTxn = feeTxn.sign(private_key)
-    signedTokenTxn = tokenTxn.sign(private_key)
-    signedAppCallTxn = appCallTxn.sign(private_key)
+    transaction.assign_group_id([fee_tx, token_tx, app_call_tx])
+    signed_fee_tx = fee_tx.sign(private_key)
+    signedtoken_tx = token_tx.sign(private_key)
+    signed_app_call_tx = app_call_tx.sign(private_key)
 
     client.send_transactions(
-        [signedFeeTxn, signedTokenTxn, signedAppCallTxn]
+        [signed_fee_tx, signedtoken_tx, signed_app_call_tx]
     )
-    waitForTransaction(client, signedAppCallTxn.get_txid())
+    wait_for_transaction(client, signed_app_call_tx.get_txid())
 
 
 def swap(
-    client: AlgodClient, appID: int, option: str, q: int, supplier: int, \
-    private_key: str, token: int, poolToken: int, yesToken: int, noToken: int
+    client: AlgodClient, app_id: int, option: str, quantity: int, supplier: int, \
+    private_key: str, token: int, pool_token: int, yes_token: int, no_token: int
 ) -> None:
-
+    """swap stbl for option
+    """
     if option == 'yes':
         second_argument = b"buy_yes"
     elif option =='no':
@@ -259,189 +264,192 @@ def swap(
     else:
         return
 
-    appAddr = get_application_address(appID)
-    suggestedParams = client.suggested_params()
+    app_addr = get_application_address(app_id)
+    suggested_params = client.suggested_params()
 
-    # pay for the fee incurred by AMM for sending back the pool token
-    feeTxn = transaction.PaymentTxn(
+    fee_tx = transaction.PaymentTxn(
         sender=supplier,
-        receiver=appAddr,
+        receiver=app_addr,
         amt=2_000,
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
-    tokenTxn = transaction.AssetTransferTxn(
+    token_tx = transaction.AssetTransferTxn(
         sender=supplier,
-        receiver=appAddr,
+        receiver=app_addr,
         index=token,
-        amt=q,
-        sp=suggestedParams,
+        amt=quantity,
+        sp=suggested_params,
     )
 
-    appCallTxn = transaction.ApplicationCallTxn(
+    app_call_tx = transaction.ApplicationCallTxn(
         sender=supplier,
-        index=appID,
+        index=app_id,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[ b"swap", second_argument],
-        foreign_assets=[token, poolToken, yesToken, noToken],
-        sp=suggestedParams,
+        foreign_assets=[token, pool_token, yes_token, no_token],
+        sp=suggested_params,
     )
 
-    transaction.assign_group_id([feeTxn, tokenTxn, appCallTxn])
-    signedFeeTxn = feeTxn.sign(private_key)
-    signedTokenTxn = tokenTxn.sign(private_key)
-    signedAppCallTxn = appCallTxn.sign(private_key)
+    transaction.assign_group_id([fee_tx, token_tx, app_call_tx])
+    signed_fee_tx = fee_tx.sign(private_key)
+    signedtoken_tx = token_tx.sign(private_key)
+    signed_app_call_tx = app_call_tx.sign(private_key)
 
     client.send_transactions(
-        [signedFeeTxn, signedTokenTxn, signedAppCallTxn]
+        [signed_fee_tx, signedtoken_tx, signed_app_call_tx]
     )
-    waitForTransaction(client, signedAppCallTxn.get_txid())
+    wait_for_transaction(client, signed_app_call_tx.get_txid())
 
 
 def withdraw(
-    client: AlgodClient, appID: int, poolToken: int, poolTokenAmount: int,
-    withdrawAccount: str, token: int, private_key: str
+    client: AlgodClient, app_id: int, pool_token: int, pool_token_amount: int,
+    withdrawal_account: str, token: int, private_key: str
 ) -> None:
     """Withdraw liquidity  + rewards from the pool back to supplier.
-    Supplier should receive stablecoin + fees proportional to the liquidity share in the pool they choose to withdraw.
+    Supplier should receive stablecoin + fees proportional
+    to the liquidity share in the pool they choose to withdraw.
     """
-    appAddr = get_application_address(appID)
-    suggestedParams = client.suggested_params()
+    app_addr = get_application_address(app_id)
+    suggested_params = client.suggested_params()
 
     # pay for the fee incurred by AMM for sending back tokens A and B
-    feeTxn = transaction.PaymentTxn(
-        sender=withdrawAccount,
-        receiver=appAddr,
+    fee_tx = transaction.PaymentTxn(
+        sender=withdrawal_account,
+        receiver=app_addr,
         amt=2_000,
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
 
-    poolTokenTxn = transaction.AssetTransferTxn(
-        sender=withdrawAccount,
-        receiver=appAddr,
-        index=poolToken,
-        amt=poolTokenAmount,
-        sp=suggestedParams,
+    pool_token_tx = transaction.AssetTransferTxn(
+        sender=withdrawal_account,
+        receiver=app_addr,
+        index=pool_token,
+        amt=pool_token_amount,
+        sp=suggested_params,
     )
 
-    appCallTxn = transaction.ApplicationCallTxn(
-        sender=withdrawAccount,
-        index=appID,
+    app_call_tx = transaction.ApplicationCallTxn(
+        sender=withdrawal_account,
+        index=app_id,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[b"withdraw"],
-        foreign_assets=[token, poolToken],
-        sp=suggestedParams,
+        foreign_assets=[token, pool_token],
+        sp=suggested_params,
     )
 
-    transaction.assign_group_id([feeTxn, poolTokenTxn, appCallTxn])
-    signedFeeTxn = feeTxn.sign(private_key)
-    signedPoolTokenTxn = poolTokenTxn.sign(private_key)
-    signedAppCallTxn = appCallTxn.sign(private_key)
+    transaction.assign_group_id([fee_tx, pool_token_tx, app_call_tx])
+    signed_fee_tx = fee_tx.sign(private_key)
+    signed_token_tx = pool_token_tx.sign(private_key)
+    signed_app_call_tx = app_call_tx.sign(private_key)
 
-    client.send_transactions([signedFeeTxn, signedPoolTokenTxn, signedAppCallTxn])
-    waitForTransaction(client, signedAppCallTxn.get_txid())
+    client.send_transactions([signed_fee_tx, signed_token_tx, signed_app_call_tx])
+    wait_for_transaction(client, signed_app_call_tx.get_txid())
 
 
 def redeem(
-    client: AlgodClient, appID: int, Token:int, TokenAmount: int, 
-    withdrawAccount: str, token: int, private_key: str
+    client: AlgodClient, app_id: int, token_in:int, token_amount: int,
+    withdrawal_account: str, token_out: int, private_key: str
 ) -> None:
+    """reedems """
 
-    appAddr = get_application_address(appID)
-    suggestedParams = client.suggested_params()
+    app_addr = get_application_address(app_id)
+    suggested_params = client.suggested_params()
 
     # pay for the fee incurred by AMM for sending back tokens A and B
-    feeTxn = transaction.PaymentTxn(
-        sender=withdrawAccount,
-        receiver=appAddr,
+    fee_tx = transaction.PaymentTxn(
+        sender=withdrawal_account,
+        receiver=app_addr,
         amt=2_000,
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
 
-    TokenTxn = transaction.AssetTransferTxn(
-        sender=withdrawAccount,
-        receiver=appAddr,
-        index=Token,
-        amt=TokenAmount,
-        sp=suggestedParams,
+    token_tx = transaction.AssetTransferTxn(
+        sender=withdrawal_account,
+        receiver=app_addr,
+        index=token_in,
+        amt=token_amount,
+        sp=suggested_params,
     )
 
-    appCallTxn = transaction.ApplicationCallTxn(
-        sender=withdrawAccount,
-        index=appID,
+    app_call_tx = transaction.ApplicationCallTxn(
+        sender=withdrawal_account,
+        index=app_id,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[b"redeem"],
-        foreign_assets=[token, Token],
-        sp=suggestedParams,
+        foreign_assets=[token_out, token_in],
+        sp=suggested_params,
     )
 
-    transaction.assign_group_id([feeTxn, TokenTxn, appCallTxn])
-    signedFeeTxn = feeTxn.sign(private_key)
-    signedPoolTokenTxn = TokenTxn.sign(private_key)
-    signedAppCallTxn = appCallTxn.sign(private_key)
+    transaction.assign_group_id([fee_tx, token_tx, app_call_tx])
+    signed_fee_tx = fee_tx.sign(private_key)
+    signed_token_tx = token_tx.sign(private_key)
+    signed_app_call_tx = app_call_tx.sign(private_key)
 
-    client.send_transactions([signedFeeTxn, signedPoolTokenTxn, signedAppCallTxn])
-    waitForTransaction(client, signedAppCallTxn.get_txid())
+    client.send_transactions([signed_fee_tx, signed_token_tx, signed_app_call_tx])
+    wait_for_transaction(client, signed_app_call_tx.get_txid())
 
 
 def set_result(
     client: AlgodClient,
-    appID: int,
+    app_id: int,
     funder: str,
     private_key: str,
     second_argument
 )-> None:
+    """ sets result of the event
+    """
 
-    appAddr = get_application_address(appID)
+    app_addr = get_application_address(app_id)
 
-    suggestedParams = client.suggested_params()
+    suggested_params = client.suggested_params()
 
-    feeTxn = transaction.PaymentTxn(
+    fee_tx = transaction.PaymentTxn(
         sender=funder,
-        receiver=appAddr,
+        receiver=app_addr,
         amt=2_000,
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
-    callTxn = transaction.ApplicationCallTxn(
+    call_tx = transaction.ApplicationCallTxn(
         sender=funder,
-        index=appID,
+        index=app_id,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[b"result", second_argument],
-        sp=suggestedParams,
+        sp=suggested_params,
     )
 
-    transaction.assign_group_id([feeTxn, callTxn])
-    signedFeeTxn = feeTxn.sign(private_key)
-    signedAppCallTxn = callTxn.sign(private_key)
+    transaction.assign_group_id([fee_tx, call_tx])
+    signed_fee_tx = fee_tx.sign(private_key)
+    signed_app_call_tx = call_tx.sign(private_key)
 
-    client.send_transactions([signedFeeTxn, signedAppCallTxn])
-    waitForTransaction(client, signedAppCallTxn.get_txid())
+    client.send_transactions([signed_fee_tx, signed_app_call_tx])
+    wait_for_transaction(client, signed_app_call_tx.get_txid())
 
 
-def closeAmm(
+def close_amm(
     client: AlgodClient,
-    appID: int,
+    app_id: int,
     closer: str,
     private_key: str
 )-> None:
     """Close an AMM.
     Args:
         client: An Algod client.
-        appID: The app ID of the amm.
+        app_id: The app ID of the amm.
         closer: closer account public address. Must be the original creator of the pool.
         private_key: closer account private key to sign the transactions.
     """
 
-    deleteTxn = transaction.ApplicationDeleteTxn(
+    delete_tx = transaction.ApplicationDeleteTxn(
         sender=closer,
-        index=appID,
+        index=app_id,
         sp=client.suggested_params(),
     )
-    signedDeleteTxn = deleteTxn.sign(private_key)
+    signed_tx = delete_tx.sign(private_key)
 
-    client.send_transaction(signedDeleteTxn)
+    client.send_transaction(signed_tx)
 
-    waitForTransaction(client, signedDeleteTxn.get_txid())
+    wait_for_transaction(client, signed_tx.get_txid())

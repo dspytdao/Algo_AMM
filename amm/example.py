@@ -1,11 +1,12 @@
+""" example of the contract lifetime """
 import os
 from dotenv import load_dotenv
 from algosdk import account
 from algosdk.v2client import algod
 
 from create_asset import create_asset
-from amm_api import createAmmApp, setupAmmApp, optInToPoolToken, \
-    supply, withdraw, swap, set_result, closeAmm, redeem
+from amm_api import create_amm_app, setup_amm_app, opt_in_to_pool_token, \
+    supply, withdraw, swap, set_result, close_amm, redeem
 
 load_dotenv()
 
@@ -14,19 +15,19 @@ creator = account.address_from_private_key(private_key)
 
 algod_token = os.getenv('algod_token')
 
-algod_address = "https://testnet-algorand.api.purestake.io/ps2"
+ALGOD_ADDRESS = "https://testnet-algorand.api.purestake.io/ps2"
 
 headers = {
    "X-API-Key": algod_token,
 }
 
 # initialize an algodClient
-client = algod.AlgodClient(algod_token, algod_address, headers)
+client = algod.AlgodClient(algod_token, ALGOD_ADDRESS, headers)
 
 # create (stable) asset
 token = create_asset(client, private_key)
 
-appID = createAmmApp(
+appID = create_amm_app(
     client=client,
     creator=creator,
     private_key=private_key,
@@ -36,9 +37,9 @@ appID = createAmmApp(
 
 print(f"Alice is setting up and funding amm {appID}")
 
-Tokens = setupAmmApp(
+Tokens = setup_amm_app(
     client=client,
-    appID=appID,
+    app_id=appID,
     funder=creator,
     private_key=private_key,
     token=token,
@@ -50,68 +51,68 @@ noToken = Tokens['no_token_key']
 
 print(Tokens['pool_token_key'], Tokens['yes_token_key'], Tokens['no_token_key'])
 
-optInToPoolToken(client, creator, private_key, poolToken)
-optInToPoolToken(client, creator, private_key, yesToken)
-optInToPoolToken(client, creator, private_key, noToken)
+opt_in_to_pool_token(client, creator, private_key, poolToken)
+opt_in_to_pool_token(client, creator, private_key, yesToken)
+opt_in_to_pool_token(client, creator, private_key, noToken)
 
 
 print("Supplying AMM with initial token")
 
-poolTokenFirstAmount = 500_000
+POOL_TOKEN_FIRST_AMOUNT = 500_000
 
 supply(
-    client=client, 
-    appID=appID, 
-    q=poolTokenFirstAmount,
-    supplier=creator, 
-    private_key=private_key, 
-    token=token, 
+    client=client,
+    appID=appID,
+    q=POOL_TOKEN_FIRST_AMOUNT,
+    supplier=creator,
+    private_key=private_key,
+    token=token,
     poolToken=poolToken,
     yesToken=yesToken, noToken=noToken
 )
 
 print("Supplying AMM with more tokens")
 
-poolTokenSecondAmount = 1_500_000
+POOL_TOKEN_SECOND_AMOUNT = 1_500_000
 
 supply(
-    client=client, 
-    appID=appID, 
-    q=poolTokenSecondAmount,
-    supplier=creator, 
-    private_key=private_key, 
-    token=token, 
+    client=client,
+    appID=appID,
+    q=POOL_TOKEN_SECOND_AMOUNT,
+    supplier=creator,
+    private_key=private_key,
+    token=token,
     poolToken=poolToken,
     yesToken=yesToken, noToken=noToken
 )
 
 print("Swapping")
 
-yesTokenAmount = 100_000
+YES_TOKEN_AMOUNT = 100_000
 
 # buy yes token
 swap(
-    client=client, 
+    client=client,
     appID=appID,
     option="yes",
-    q=yesTokenAmount, 
-    supplier=creator, 
-    private_key=private_key, 
+    q=YES_TOKEN_AMOUNT,
+    supplier=creator,
+    private_key=private_key,
     token=token,
     poolToken=poolToken,
-    yesToken=yesToken, 
+    yesToken=yesToken,
     noToken=noToken
 )
 
 #buy no token
 swap(
-    client=client, 
-    appID=appID, 
+    client=client,
+    appID=appID,
     option="no",
-    q=yesTokenAmount, 
-    supplier=creator, 
-    private_key=private_key, 
-    token=token, 
+    q=YES_TOKEN_AMOUNT,
+    supplier=creator,
+    private_key=private_key,
+    token=token,
     poolToken=poolToken,
     yesToken=yesToken,
     noToken=noToken
@@ -119,13 +120,13 @@ swap(
 
 print("Withdrawing")
 
-AllTokens = 2_000_000
+ALL_TOKENS = 2_000_000
 
-""" 
+"""
 withdraw(
     client = client,
     appID = appID,
-    poolTokenAmount = AllTokens, poolToken = poolToken,
+    poolTokenAmount = ALL_TOKENS, poolToken = poolToken,
     withdrawAccount = creator, private_key = private_key, token = token
 )
 
@@ -159,7 +160,7 @@ redeem(
 
 print("Deleting")
 
-closeAmm(
+close_amm(
     client = client,
     appID = appID,
     closer=creator,
