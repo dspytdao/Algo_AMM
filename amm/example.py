@@ -1,28 +1,11 @@
 """ example of the contract lifetime """
-import os
-from dotenv import load_dotenv
-from algosdk import account
-from algosdk.v2client import algod
-
 from amm.create_asset import create_asset
 from amm.amm_api import create_amm_app, setup_amm_app, opt_in_to_pool_token, \
     supply, swap
+from amm.utils.setup import setup
 
-load_dotenv()
 
-private_key = os.getenv('key')
-creator = account.address_from_private_key(private_key)
-
-algod_token = os.getenv('algod_token')
-
-ALGOD_ADDRESS = "https://testnet-algorand.api.purestake.io/ps2"
-
-headers = {
-   "X-API-Key": algod_token,
-}
-
-# initialize an algodClient
-client = algod.AlgodClient(algod_token, ALGOD_ADDRESS, headers)
+client, creator, private_key = setup()
 
 # create (stable) asset
 token = create_asset(client, private_key)

@@ -1,24 +1,8 @@
 """we manually set result of the event"""
-
-import os
-from dotenv import load_dotenv
-from algosdk import account
-from algosdk.v2client import algod
-
 from amm.amm_api import set_result
+from amm.utils.setup import setup
 
-load_dotenv()
-
-private_key = os.getenv('key')
-creator = account.address_from_private_key(private_key)
-
-algod_token = os.getenv('algod_token')
-ALGOD_ADDRESS = "https://testnet-algorand.api.purestake.io/ps2"
-headers = {
-   "X-API-Key": algod_token,
-}
-
-client = algod.AlgodClient(algod_token, ALGOD_ADDRESS, headers)
+client, creator, private_key = setup()
 
 APP_ID = 100248351
 
