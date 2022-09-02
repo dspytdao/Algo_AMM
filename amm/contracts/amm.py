@@ -3,10 +3,10 @@ from pyteal import App, Global, Assert, Seq, And, Not, Txn, Int,\
     Approve, Gtxn, If, Bytes, Reject, Btoi, Cond, Or, OnComplete, compileTeal, Mode
 
 from amm.contracts.helpers import (
-    validateTokenReceived, mintAndSendPoolToken,
-    mintAndSendNoToken, mintAndSendYesToken,
-    opt_in, createPoolToken, withdrawLPToken,
-    createNoToken, createYesToken, redeem_token
+    validate_token_received, mint_and_send_pool_token,
+    mint_and_send_no_token, mint_and_send_yes_token,
+    opt_in, create_pool_token, withdraw_lp_token,
+    create_no_token, create_yes_token, redeem_token
     )
 
 from amm.contracts.config import (
@@ -29,11 +29,11 @@ def get_setup():
         pool_tokens_outstanding,
         Assert(Not(pool_token_id.hasValue())),
         Assert(Not(pool_tokens_outstanding.hasValue())),
-        createPoolToken(TOKEN_DEFAULT_AMOUNT),
+        create_pool_token(TOKEN_DEFAULT_AMOUNT),
         opt_in(TOKEN_FUNDING_KEY),
-        createNoToken(TOKEN_DEFAULT_AMOUNT),
+        create_no_token(TOKEN_DEFAULT_AMOUNT),
         opt_in(NO_TOKEN_KEY),
-        createYesToken(TOKEN_DEFAULT_AMOUNT),
+        create_yes_token(TOKEN_DEFAULT_AMOUNT),
         opt_in(YES_TOKEN_KEY),
         Approve(),
     )
@@ -46,12 +46,12 @@ def get_supply():
     on_supply = Seq(
         Assert(
             And(
-                validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
+                validate_token_received(token_txn_index, TOKEN_FUNDING_KEY),
                 Gtxn[token_txn_index].asset_amount()
                 >= App.globalGet(MIN_INCREMENT_KEY),
            )
         ),
-        mintAndSendPoolToken(
+        mint_and_send_pool_token(
             Txn.sender(),
             Gtxn[token_txn_index].asset_amount(),
         ),
@@ -66,12 +66,12 @@ def get_swap():
     option = Txn.application_args[1]
     on_swap = Seq(
         Assert(
-            validateTokenReceived(token_txn_index, TOKEN_FUNDING_KEY),
+            validate_token_received(token_txn_index, TOKEN_FUNDING_KEY),
         ),
         If(option == Bytes("buy_yes"))
         .Then(
             Seq(
-                mintAndSendYesToken(
+                mint_and_send_yes_token(
                     Txn.sender(),
                     Gtxn[token_txn_index].asset_amount(),
                 ),
@@ -81,7 +81,7 @@ def get_swap():
         .ElseIf(option == Bytes("buy_no"))
         .Then(
             Seq(
-                mintAndSendNoToken(
+                mint_and_send_no_token(
                     Txn.sender(),
                     Gtxn[token_txn_index].asset_amount(),
                 ),
@@ -100,9 +100,9 @@ def get_withdraw():
 
     on_withdraw = Seq(
         Assert(
-            validateTokenReceived(pool_token_txn_index, POOL_TOKEN_KEY),
+            validate_token_received(pool_token_txn_index, POOL_TOKEN_KEY),
         ),
-        withdrawLPToken(
+        withdraw_lp_token(
             Txn.sender(),
             Gtxn[pool_token_txn_index].asset_amount(),
         ),
@@ -150,7 +150,7 @@ def get_redemption():
     on_redemption = Seq(
         Assert(
             And(
-                validateTokenReceived(token_txn_index, RESULT),
+                validate_token_received(token_txn_index, RESULT),
             )
         ),
         redeem_token(

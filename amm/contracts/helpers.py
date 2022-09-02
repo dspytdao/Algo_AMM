@@ -11,9 +11,10 @@ from amm.contracts.config import (
 )
 
 
-def validateTokenReceived(
+def validate_token_received(
     transaction_index: TealType.uint64, token_key: TealType.bytes
 ) -> Expr:
+    """validate token type, sender, asset """
     return And(
         Gtxn[transaction_index].type_enum() == TxnType.AssetTransfer,
         Gtxn[transaction_index].sender() == Txn.sender(),
@@ -47,7 +48,8 @@ def opt_in(token_key: TealType.bytes) -> Expr:
     return send_token(token_key, Global.current_application_address(), Int(0))
 
 
-def createPoolToken(pool_token_amount: TealType.uint64) -> Expr:
+def create_pool_token(pool_token_amount: TealType.uint64) -> Expr:
+    """creates asa token"""
     return Seq(
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields(
@@ -66,7 +68,8 @@ def createPoolToken(pool_token_amount: TealType.uint64) -> Expr:
     )
 
 
-def createNoToken(token_amount: TealType.uint64) -> Expr:
+def create_no_token(token_amount: TealType.uint64) -> Expr:
+    """creates asa token"""
     return Seq(
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields(
@@ -87,7 +90,8 @@ def createNoToken(token_amount: TealType.uint64) -> Expr:
     )
 
 
-def createYesToken(token_amount: TealType.uint64) -> Expr:
+def create_yes_token(token_amount: TealType.uint64) -> Expr:
+    """creates asa token"""
     return Seq(
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields(
@@ -108,7 +112,8 @@ def createYesToken(token_amount: TealType.uint64) -> Expr:
     )
 
 
-def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> Expr:
+def mint_and_send_pool_token(receiver: TealType.bytes, amount: TealType.uint64) -> Expr:
+    """mintAndSendPoolToken"""
     ratio: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         ratio.store(
@@ -118,10 +123,15 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
         If(App.globalGet(POOL_FUNDING_RESERVES) > Int(0))
         .Then(
             Seq(
-                send_token(POOL_TOKEN_KEY, receiver, amount * App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) / App.globalGet(POOL_FUNDING_RESERVES) ),
+                send_token(
+                    POOL_TOKEN_KEY, receiver, amount *
+                    App.globalGet(POOL_TOKENS_OUTSTANDING_KEY)
+                    / App.globalGet(POOL_FUNDING_RESERVES) ),
                 App.globalPut(
                     POOL_TOKENS_OUTSTANDING_KEY,
-                App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) + amount * App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) / App.globalGet(POOL_FUNDING_RESERVES)
+                    App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) + amount *
+                    App.globalGet(POOL_TOKENS_OUTSTANDING_KEY) /
+                    App.globalGet(POOL_FUNDING_RESERVES)
             ))
         )
         .ElseIf(App.globalGet(POOL_FUNDING_RESERVES) == Int(0))
@@ -134,26 +144,31 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
                 ),
             )
         ),
-        App.globalPut(NO_TOKENS_RESERVES, ratio.load()  * (amount / Int(4)) + App.globalGet(NO_TOKENS_RESERVES) ),
-        App.globalPut(YES_TOKENS_RESERVES, ( Int(1) / ratio.load() )* (amount / Int(4)) + App.globalGet(YES_TOKENS_RESERVES) ),
+        App.globalPut(NO_TOKENS_RESERVES,
+            ratio.load()  * (amount / Int(4)) + App.globalGet(NO_TOKENS_RESERVES) ),
+        App.globalPut(YES_TOKENS_RESERVES,
+            ( Int(1) / ratio.load() )* (amount / Int(4)) + App.globalGet(YES_TOKENS_RESERVES) ),
         App.globalPut(
             POOL_FUNDING_RESERVES, App.globalGet(POOL_FUNDING_RESERVES) + amount
         ),
     )
 
 
-def mintAndSendNoToken(
+def mint_and_send_no_token(
     receiver: TealType.bytes, amount: TealType.uint64
 ) -> Expr:
+    """mints no token"""
     funding = AssetHolding.balance(
         Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
     )
     tokens_out: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         tokens_out.store(
-            App.globalGet(NO_TOKENS_RESERVES) * amount / (App.globalGet(YES_TOKENS_RESERVES) + amount )
+            App.globalGet(NO_TOKENS_RESERVES) * amount /
+            (App.globalGet(YES_TOKENS_RESERVES) + amount )
         ),
-        App.globalPut(NO_TOKENS_OUTSTANDING_KEY, App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokens_out.load()),
+        App.globalPut(NO_TOKENS_OUTSTANDING_KEY,
+            App.globalGet(NO_TOKENS_OUTSTANDING_KEY) + tokens_out.load()),
         App.globalPut(NO_TOKENS_RESERVES, App.globalGet(NO_TOKENS_RESERVES) - tokens_out.load()),
         send_token(NO_TOKEN_KEY, receiver, tokens_out.load()),
         If(App.globalGet(NO_TOKENS_OUTSTANDING_KEY) > App.globalGet(YES_TOKENS_OUTSTANDING_KEY))
@@ -168,9 +183,10 @@ def mintAndSendNoToken(
     )
 
 
-def mintAndSendYesToken(
+def mint_and_send_yes_token(
     receiver: TealType.bytes, amount: TealType.uint64
 ) -> Expr:
+    """mints yes token"""
     funding = AssetHolding.balance(
         Global.current_application_address(), App.globalGet(TOKEN_FUNDING_KEY)
     )
@@ -198,10 +214,11 @@ def mintAndSendYesToken(
     )
 
 
-def withdrawLPToken(
+def withdraw_lp_token(
     receiver: TealType.bytes,
     pool_token_amount: TealType.uint64,
 ) -> Expr:
+    """withdraws lp token"""
     ratio: ScratchVar = ScratchVar(TealType.uint64)
     return Seq(
         send_token(

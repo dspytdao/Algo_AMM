@@ -32,7 +32,7 @@ appID = create_amm_app(
     creator=creator,
     private_key=private_key,
     token=STABLE_TOKEN,
-    minIncrement=1000,
+    min_increment=1000,
 )
 
 print(appID)
