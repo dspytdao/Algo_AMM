@@ -10,7 +10,7 @@ from algosdk import encoding
 from algosdk.future import transaction
 from algosdk.logic import get_application_address
 
-from contracts.amm import approval_program, clear_program
+from amm.contracts.amm import approval_program, clear_program
 
 MIN_BALANCE_REQUIREMENT = (
     # min account balance

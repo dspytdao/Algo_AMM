@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 from algosdk import account
 from algosdk.v2client import algod
 
-from create_asset import create_asset
-from amm_api import create_amm_app, setup_amm_app, opt_in_to_pool_token, \
-    supply, withdraw, swap, set_result, close_amm, redeem
+from amm.create_asset import create_asset
+from amm.amm_api import create_amm_app, setup_amm_app, opt_in_to_pool_token, \
+    supply, swap
 
 load_dotenv()
 

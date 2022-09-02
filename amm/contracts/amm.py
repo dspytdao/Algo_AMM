@@ -2,14 +2,14 @@
 from pyteal import App, Global, Assert, Seq, And, Not, Txn, Int,\
     Approve, Gtxn, If, Bytes, Reject, Btoi, Cond, Or, OnComplete, compileTeal, Mode
 
-from contracts.helpers import (
+from amm.contracts.helpers import (
     validateTokenReceived, mintAndSendPoolToken,
     mintAndSendNoToken, mintAndSendYesToken,
     optIn, createPoolToken, withdrawLPToken,
     createNoToken, createYesToken, redeemToken
     )
 
-from contracts.config import (
+from amm.contracts.config import (
     CREATOR_KEY, TOKEN_FUNDING_KEY,
     POOL_TOKEN_KEY, MIN_INCREMENT_KEY,
     POOL_TOKENS_OUTSTANDING_KEY, TOKEN_DEFAULT_AMOUNT,

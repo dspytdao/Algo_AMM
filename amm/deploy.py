@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 from algosdk import account
 from algosdk.v2client import algod
 from algosdk.logic import get_application_address
-from amm_api import create_amm_app, opt_in_to_pool_token
+
+from amm.amm_api import create_amm_app, opt_in_to_pool_token
 
 
 load_dotenv()
@@ -20,7 +21,6 @@ headers = {
    "X-API-Key": algod_token,
 }
 
-# initialize an algodClient
 client = algod.AlgodClient(algod_token, ALGOD_ADDRESS, headers)
 
 STABLE_TOKEN = 10458941

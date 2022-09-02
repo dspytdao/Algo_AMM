@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from algosdk import account
 from algosdk.v2client import algod
 
-from amm_api import set_result
+from amm.amm_api import set_result
 
 load_dotenv()
 
@@ -20,12 +20,12 @@ headers = {
 
 client = algod.AlgodClient(algod_token, ALGOD_ADDRESS, headers)
 
-APP_ID= 100248351
+APP_ID = 100248351
 
 set_result(
     client = client,
-    APP_ID= APP_ID,
-    second_argument=b"yes",
-    funder=creator,
+    appID = APP_ID,
+    second_argument = b"yes",
+    funder = creator,
     private_key = private_key
 )

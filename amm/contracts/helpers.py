@@ -3,7 +3,7 @@
 from pyteal import App, Global, TxnType, Seq, And, TealType, Txn, Int, Expr,\
     Gtxn, If, Bytes, InnerTxnBuilder, TxnField, InnerTxn, ScratchVar, AssetHolding
 
-from contracts.config import (
+from amm.contracts.config import (
     POOL_TOKENS_OUTSTANDING_KEY, POOL_TOKEN_KEY, POOL_FUNDING_RESERVES, RESULT,
     YES_TOKEN_KEY, YES_TOKENS_OUTSTANDING_KEY, YES_TOKENS_RESERVES,
     NO_TOKEN_KEY, NO_TOKENS_OUTSTANDING_KEY, NO_TOKENS_RESERVES,
