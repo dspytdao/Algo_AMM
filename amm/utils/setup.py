@@ -30,9 +30,9 @@ class Account:
         """ generates account"""
         return account.generate_account()
 
+
 def setup():
     """ sets up algod client and account """
     client = algod.AlgodClient(algod_token, ALGOD_ADDRESS, headers)
     deployer = Account(os.getenv('key'))
     return client, deployer
-    

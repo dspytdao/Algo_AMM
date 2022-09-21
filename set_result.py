@@ -10,7 +10,6 @@ client, creator = setup()
 app = App(client, APP_ID )
 
 app.set_result(
-    client = client,
     funder=creator,
     second_argument = b"yes",
 )
