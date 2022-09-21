@@ -1,6 +1,5 @@
 """create asset"""
 
-from algosdk import account
 from algosdk.future import transaction
 
 def wait_for_confirmation(client, txid):
@@ -17,9 +16,9 @@ def wait_for_confirmation(client, txid):
     return txinfo
 
 
-def create_asset(client, private_key):
+def create_asset(client, account):
     """create asset"""
-    sender = account.address_from_private_key(private_key)
+    sender = account.public_key
 
     params = client.suggested_params()
 
@@ -39,7 +38,7 @@ def create_asset(client, private_key):
         decimals=0)
 
     # Sign with secret key of creator
-    stxn = txn.sign(private_key)
+    stxn = txn.sign(account.private_key)
 
     # Send the transaction to the network and retrieve the txid.
 

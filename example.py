@@ -5,17 +5,16 @@ from amm.amm_api import create_amm_app, setup_amm_app, opt_in_to_pool_token, \
 from amm.utils.setup import setup
 
 
-client, creator, private_key = setup()
+client, deployer = setup()
 
 # create (stable) asset
-token = create_asset(client, private_key)
+token = create_asset(client, deployer)
 
 appID = create_amm_app(
     client=client,
-    creator=creator,
-    private_key=private_key,
     token=token,
     min_increment=1000,
+    deployer=deployer
 )
 
 print(f"Alice is setting up and funding amm {appID}")
@@ -23,9 +22,8 @@ print(f"Alice is setting up and funding amm {appID}")
 Tokens = setup_amm_app(
     client=client,
     app_id=appID,
-    funder=creator,
-    private_key=private_key,
     token=token,
+    funder=deployer
 )
 
 poolToken = Tokens['pool_token_key']
@@ -34,9 +32,9 @@ noToken = Tokens['no_token_key']
 
 print(Tokens['pool_token_key'], Tokens['yes_token_key'], Tokens['no_token_key'])
 
-opt_in_to_pool_token(client, creator, private_key, poolToken)
-opt_in_to_pool_token(client, creator, private_key, yesToken)
-opt_in_to_pool_token(client, creator, private_key, noToken)
+opt_in_to_pool_token(client, poolToken, deployer)
+opt_in_to_pool_token(client, yesToken, deployer)
+opt_in_to_pool_token(client, noToken, deployer)
 
 
 print("Supplying AMM with initial token")
@@ -47,8 +45,7 @@ supply(
     client=client,
     app_id=appID,
     quantity=POOL_TOKEN_FIRST_AMOUNT,
-    supplier=creator,
-    private_key=private_key,
+    supplier=deployer,
     token=token,
     pool_token=poolToken,
     yes_token=yesToken,
@@ -63,8 +60,7 @@ supply(
     client=client,
     app_id=appID,
     quantity=POOL_TOKEN_SECOND_AMOUNT,
-    supplier=creator,
-    private_key=private_key,
+    supplier=deployer,
     token=token,
     pool_token=poolToken,
     yes_token=yesToken,
@@ -81,8 +77,7 @@ swap(
     app_id=appID,
     option="yes",
     quantity=YES_TOKEN_AMOUNT,
-    supplier=creator,
-    private_key=private_key,
+    supplier=deployer,
     token=token,
     pool_token=poolToken,
     yes_token=yesToken,
@@ -95,8 +90,7 @@ swap(
     app_id=appID,
     option="no",
     quantity=YES_TOKEN_AMOUNT,
-    supplier=creator,
-    private_key=private_key,
+    supplier=deployer,
     token=token,
     pool_token=poolToken,
     yes_token=yesToken,
