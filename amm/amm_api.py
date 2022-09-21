@@ -60,6 +60,9 @@ class App:
         self.yes_token:int
         self.no_token:int
 
+    def update_app_address(self):
+        """ updates app address"""
+        self.app_addr = get_application_address(self.app_id)
 
     def wait_for_transaction(
         self, tx_id: str, timeout: int = 10
@@ -132,6 +135,7 @@ class App:
         response = self.wait_for_transaction( signed_tx.get_txid())
         assert response["application-index"] is not None and response["application-index"] > 0
         self.app_id=response["application-index"]
+        self.update_app_address()
         return response["application-index"]
 
 
