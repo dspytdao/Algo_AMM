@@ -208,6 +208,44 @@ class App:
         self.wait_for_transaction(signed_opt_in_tx.get_txid())
 
 
+    def opt_in_to_no_token(
+        self,
+        account: Account
+    ) -> None:
+        """Opts into Pool Token
+        Args:
+            account: The account opting into the token.
+        """
+
+        optin_tx = transaction.AssetOptInTxn(
+            sender=account.public_key, index=self.no_token, sp=self.suggested_params
+        )
+
+        signed_opt_in_tx = optin_tx.sign(account.private_key)
+
+        self.client.send_transaction(signed_opt_in_tx)
+        self.wait_for_transaction(signed_opt_in_tx.get_txid())
+
+
+    def opt_in_to_yes_token(
+        self,
+        account: Account
+    ) -> None:
+        """Opts into Pool Token
+        Args:
+            account: The account opting into the token.
+        """
+
+        optin_tx = transaction.AssetOptInTxn(
+            sender=account.public_key, index=self.yes_token, sp=self.suggested_params
+        )
+
+        signed_opt_in_tx = optin_tx.sign(account.private_key)
+
+        self.client.send_transaction(signed_opt_in_tx)
+        self.wait_for_transaction(signed_opt_in_tx.get_txid())
+
+
     def supply(
         self, quantity: int, supplier: Account
     ) -> None:

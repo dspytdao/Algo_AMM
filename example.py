@@ -1,7 +1,6 @@
 """ example of the contract lifetime """
 from amm.create_asset import create_asset
-from amm.amm_api import create_amm_app, setup_amm_app, opt_in_to_pool_token, \
-    supply, swap
+from amm.amm_api import App
 from amm.utils.setup import setup
 
 
@@ -10,8 +9,9 @@ client, deployer = setup()
 # create (stable) asset
 token = create_asset(client, deployer)
 
-appID = create_amm_app(
-    client=client,
+app = App(client)
+
+appID = app.create_amm_app(
     token=token,
     min_increment=1000,
     deployer=deployer
@@ -19,10 +19,7 @@ appID = create_amm_app(
 
 print(f"Alice is setting up and funding amm {appID}")
 
-Tokens = setup_amm_app(
-    client=client,
-    app_id=appID,
-    token=token,
+Tokens = app.setup_amm_app(
     funder=deployer
 )
 
@@ -32,39 +29,26 @@ noToken = Tokens['no_token_key']
 
 print(Tokens['pool_token_key'], Tokens['yes_token_key'], Tokens['no_token_key'])
 
-opt_in_to_pool_token(client, poolToken, deployer)
-opt_in_to_pool_token(client, yesToken, deployer)
-opt_in_to_pool_token(client, noToken, deployer)
-
+app.opt_in_to_pool_token(deployer)
+app.opt_in_to_yes_token(deployer)
+app.opt_in_to_no_token(deployer)
 
 print("Supplying AMM with initial token")
 
 POOL_TOKEN_FIRST_AMOUNT = 500_000
 
-supply(
-    client=client,
-    app_id=appID,
+app.supply(
     quantity=POOL_TOKEN_FIRST_AMOUNT,
     supplier=deployer,
-    token=token,
-    pool_token=poolToken,
-    yes_token=yesToken,
-    no_token=noToken
 )
 
 print("Supplying AMM with more tokens")
 
 POOL_TOKEN_SECOND_AMOUNT = 1_500_000
 
-supply(
-    client=client,
-    app_id=appID,
+app.supply(
     quantity=POOL_TOKEN_SECOND_AMOUNT,
     supplier=deployer,
-    token=token,
-    pool_token=poolToken,
-    yes_token=yesToken,
-    no_token=noToken
 )
 
 print("Swapping")
@@ -72,29 +56,17 @@ print("Swapping")
 YES_TOKEN_AMOUNT = 100_000
 
 # buy yes token
-swap(
-    client=client,
-    app_id=appID,
+app.swap(
     option="yes",
     quantity=YES_TOKEN_AMOUNT,
-    supplier=deployer,
-    token=token,
-    pool_token=poolToken,
-    yes_token=yesToken,
-    no_token=noToken
+    supplier=deployer
 )
 
 #buy no token
-swap(
-    client=client,
-    app_id=appID,
+app.swap(
     option="no",
     quantity=YES_TOKEN_AMOUNT,
-    supplier=deployer,
-    token=token,
-    pool_token=poolToken,
-    yes_token=yesToken,
-    no_token=noToken
+    supplier=deployer
 )
 
 print("Withdrawing")
