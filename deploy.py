@@ -8,9 +8,9 @@ STABLE_TOKEN = 10458941
 
 client, creator = setup()
 
-app = App()
+app = App(client)
 
-app.opt_in_to_pool_token(creator, STABLE_TOKEN)
+app.opt_in_to_pool_token(pool_token=STABLE_TOKEN, account=creator)
 
 appID = app.create_amm_app(
     deployer=creator,

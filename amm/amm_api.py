@@ -48,7 +48,7 @@ def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
 
 class App:
     """ Algorand App """
-    def __init__(self, client: AlgodClient, app_id: 0):
+    def __init__(self, client: AlgodClient, app_id = 0):
         self.client = client
         self.suggested_params = client.suggested_params()
         self.app_id = app_id
