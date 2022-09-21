@@ -48,6 +48,8 @@ def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
 
 class App:
     """ Algorand App """
+    # pylint: disable=too-many-instance-attributes
+    # Eight is reasonable in this case.
     def __init__(self, client: AlgodClient, app_id = 0):
         self.client = client
         self.suggested_params = client.suggested_params()
@@ -157,7 +159,7 @@ class App:
             index=self.app_id,
             on_complete=transaction.OnComplete.NoOpOC,
             app_args=[b"setup"],
-            foreign_assets=[self.token],
+            foreign_assets=[self.stable_token],
             sp=self.suggested_params,
         )
 
