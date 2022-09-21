@@ -1,4 +1,4 @@
-"""deploys contract"""
+"""deploys contract with usdc as stablecoin on testnet"""
 from amm.amm_api import App
 from amm.utils.setup import setup
 

@@ -69,51 +69,34 @@ app.swap(
     supplier=deployer
 )
 
+print("Setting Result")
+
+app.set_result(
+    second_argument=b"yes",
+    funder=deployer
+)
+
+print("Redeeming")
+
+YES_TOKENS_AMOUNT = 83_333
+
+app.redeem(
+    token_in = yesToken,
+    token_amount = YES_TOKENS_AMOUNT,
+    withdrawal_account = deployer,
+    token_out = token
+)
+
 print("Withdrawing")
 
 ALL_TOKENS = 2_000_000
 
-"""
-withdraw(
-    client = client,
-    appID = appID,
-    poolTokenAmount = ALL_TOKENS, poolToken = poolToken,
-    withdrawAccount = creator, private_key = private_key, token = token
+app.withdraw(
+    pool_token_amount = ALL_TOKENS, withdrawal_account = deployer
 )
-
-print("Result")
-#set winner
-
-set_result(
-    client = client,
-    appID = appID,
-    second_argument=b"yes",
-    funder=creator,
-    private_key = private_key
-)
-
-
-# redemption for for yes/no
-
-print("Redeeming")
-
-YesTokensAmount = 95_238
-
-redeem(
-    client = client,
-    appID = appID,
-    TokenAmount = YesTokensAmount,
-    Token = yesToken,
-    withdrawAccount = creator, private_key = private_key, token = token
-)
-
-# Delete
 
 print("Deleting")
 
-close_amm(
-    client = client,
-    appID = appID,
-    closer=creator,
-    private_key = private_key
-) """
+app.close_amm(
+    closing_account=deployer
+)
