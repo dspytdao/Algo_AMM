@@ -53,6 +53,11 @@ class App:
         self.suggested_params = client.suggested_params()
         self.app_id = app_id
         self.app_addr = get_application_address(app_id)
+        self.stable_token:int
+        self.pool_token:int
+        self.yes_token:int
+        self.no_token:int
+
 
     def wait_for_transaction(
         self, tx_id: str, timeout: int = 10
@@ -89,14 +94,13 @@ class App:
     ) -> int:
         """Creates a new amm.
         Args:
-            client: An algod client.
-            creator: The account that will create the amm application.
-            token: The id of token A in the liquidity pool,
-            min_increment: int that
-            private_key to sign the tx
+            deployer: The account that will create the amm application.
+            token: The id of liquidity token in the liquidity pool,
+            min_increment: min int to fund the pool
         Returns:
             The ID of the newly created amm app.
         """
+        self.stable_token = token
         approval, clear = get_contracts(self.client)
 
         global_schema = transaction.StateSchema(num_uints=13, num_byte_slices=1)
@@ -131,18 +135,14 @@ class App:
 
     def setup_amm_app(
             self,
-            token: int,
             funder: Account
         ) -> int:
         """Finish setting up an amm.
         This operation funds the pool account, creates pool token,
         and opts app into tokens A and B, all in one atomic transaction group.
         Args:
-            client: An algod client.
-            app_id: The app ID of the amm.
             funder: The account providing the funding for the escrow account.
-            token: Token id.
-        Return: pool token id
+        Return: app asset ids
         """
 
         fund_app_tx = transaction.PaymentTxn(
@@ -157,7 +157,7 @@ class App:
             index=self.app_id,
             on_complete=transaction.OnComplete.NoOpOC,
             app_args=[b"setup"],
-            foreign_assets=[token],
+            foreign_assets=[self.token],
             sp=self.suggested_params,
         )
 
@@ -176,28 +176,28 @@ class App:
         for i, _ in enumerate(glob_state):
             if b64decode(glob_state[i]['key']) == b"pool_token_key":
                 ids['pool_token_key'] = glob_state[i]['value']['uint']
+                self.pool_token = glob_state[i]['value']['uint']
             elif b64decode(glob_state[i]['key']) == b"yes_token_key":
                 ids['yes_token_key'] = glob_state[i]['value']['uint']
+                self.yes_token = glob_state[i]['value']['uint']
             elif b64decode(glob_state[i]['key']) == b"no_token_key":
                 ids['no_token_key'] = glob_state[i]['value']['uint']
+                self.no_token = glob_state[i]['value']['uint']
 
         return ids
 
 
     def opt_in_to_pool_token(
         self,
-        pool_token: int,
         account: Account
     ) -> None:
         """Opts into Pool Token
         Args:
-            client: An algod client.
             account: The account opting into the token.
-            pool_token: Token id.
         """
 
         optin_tx = transaction.AssetOptInTxn(
-            sender=account.public_key, index=pool_token, sp=self.suggested_params
+            sender=account.public_key, index=self.pool_token, sp=self.suggested_params
         )
 
         signed_opt_in_tx = optin_tx.sign(account.private_key)
@@ -207,8 +207,7 @@ class App:
 
 
     def supply(
-        self, quantity: int, supplier: Account, \
-        token: int, pool_token: int, yes_token: int, no_token: int
+        self, quantity: int, supplier: Account
     ) -> None:
         """Supply liquidity to the pool.
         """
@@ -224,7 +223,7 @@ class App:
         token_tx = transaction.AssetTransferTxn(
             sender=supplier.public_key,
             receiver=self.app_addr,
-            index=token,
+            index=self.stable_token,
             amt=quantity,
             sp=self.suggested_params,
         )
@@ -234,7 +233,7 @@ class App:
             index=self.app_id,
             on_complete=transaction.OnComplete.NoOpOC,
             app_args=[b"supply"],
-            foreign_assets=[token, pool_token, yes_token, no_token],
+            foreign_assets=[self.stable_token, self.pool_token, self.yes_token, self.no_token],
             sp=self.suggested_params,
         )
 
@@ -250,10 +249,10 @@ class App:
 
 
     def swap(
-        self, option: str, quantity: int, supplier: Account, \
-        token: int, pool_token: int, yes_token: int, no_token: int
+        self, option: str, quantity: int, supplier: Account
     ) -> None:
         """swap stbl for option
+
         """
         if option == 'yes':
             second_argument = b"buy_yes"
@@ -272,7 +271,7 @@ class App:
         token_tx = transaction.AssetTransferTxn(
             sender=supplier.public_key,
             receiver=self.app_addr,
-            index=token,
+            index=self.stable_token,
             amt=quantity,
             sp=self.suggested_params,
         )
@@ -282,7 +281,7 @@ class App:
             index=self.app_id,
             on_complete=transaction.OnComplete.NoOpOC,
             app_args=[ b"swap", second_argument],
-            foreign_assets=[token, pool_token, yes_token, no_token],
+            foreign_assets=[self.stable_token, self.pool_token, self.yes_token, self.no_token],
             sp=self.suggested_params,
         )
 
@@ -298,8 +297,8 @@ class App:
 
 
     def withdraw(
-        self, pool_token: int, pool_token_amount: int,
-        withdrawal_account: Account, token: int
+        self, pool_token_amount:int,
+        withdrawal_account: Account
     ) -> None:
         """Withdraw liquidity  + rewards from the pool back to supplier.
         Supplier should receive stablecoin + fees proportional
@@ -317,7 +316,7 @@ class App:
         pool_token_tx = transaction.AssetTransferTxn(
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
-            index=pool_token,
+            index=self.pool_token,
             amt=pool_token_amount,
             sp=self.suggested_params,
         )
@@ -327,7 +326,7 @@ class App:
             index=self.app_id,
             on_complete=transaction.OnComplete.NoOpOC,
             app_args=[b"withdraw"],
-            foreign_assets=[token, pool_token],
+            foreign_assets=[self.stable_token, self.pool_token],
             sp=self.suggested_params,
         )
 
