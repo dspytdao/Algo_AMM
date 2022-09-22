@@ -11,7 +11,7 @@ from algosdk.future import transaction
 from algosdk.logic import get_application_address
 
 from amm.contracts.amm import approval_program, clear_program
-from amm.utils.setup import Account
+from amm.utils.account import Account
 
 MIN_BALANCE_REQUIREMENT = (
     # min account balance

@@ -1,15 +1,20 @@
 """we manually set result of the event"""
-from amm.amm_api import App
-from amm.utils.setup import setup
+import os
 
+from amm.utils.purestake_client import AlgoClient
+from amm.amm_app import App
+from amm.utils.account import Account
+
+algod_token = os.getenv('algod_token')
+deployer = Account(os.getenv('key'))
+
+AlgoClient = AlgoClient(algod_token)
 
 APP_ID = 100248351
 
-client, creator = setup()
-
-app = App(client, APP_ID )
+app = App(AlgoClient.client, APP_ID )
 
 app.set_result(
-    funder=creator,
+    funder=deployer,
     second_argument = b"yes",
 )

@@ -1,15 +1,21 @@
 """deploys contract with usdc as stablecoin on testnet"""
-from amm.amm_api import App
-from amm.utils.setup import setup
+import os
+
+from amm.amm_app import App
+from amm.utils.account import Account
+from amm.utils.purestake_client import AlgoClient
 
 STABLE_TOKEN = 10458941
 
-client, creator = setup()
+algod_token = os.getenv('algod_token')
+deployer = Account(os.getenv('key'))
 
-app = App(client)
+AlgoClient = AlgoClient(algod_token)
+
+app = App(AlgoClient.client)
 
 appID = app.create_amm_app(
-    deployer=creator,
+    deployer=deployer,
     token=STABLE_TOKEN,
     min_increment=1000,
 )

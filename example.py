@@ -1,15 +1,21 @@
 """ example of the contract lifetime """
-from amm.create_asset import create_asset
-from amm.amm_api import App
-from amm.utils.setup import setup
+import os
+from dotenv import load_dotenv
 
+from amm.amm_app import App
+from amm.utils.account import Account
+from amm.utils.purestake_client import AlgoClient
 
-client, deployer = setup()
+load_dotenv()
 
-# create (stable) asset
-token = create_asset(client, deployer)
+algod_token = os.getenv('algod_token')
+deployer = Account(os.getenv('key'))
 
-app = App(client)
+AlgoClient = AlgoClient(algod_token)
+
+token = AlgoClient.create_asset(deployer)
+
+app = App(AlgoClient.client)
 
 appID = app.create_amm_app(
     token=token,
