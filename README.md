@@ -40,35 +40,11 @@ Liquidity Shares and Voting Shares can only be released after the creator of the
 ## Requirements
 
 1. [Vscode](https://code.visualstudio.com/) or another IDE
-2. [Python3.10](https://www.python.org/downloads/)
+2. [Python 3](https://www.python.org/downloads/)
 3. [PIP Package Manager](https://pip.pypa.io/en/stable/)
 4. [Py-algorand-sdk](https://py-algorand-sdk.readthedocs.io/en/latest/index.html)
 5. [PyTEAL](https://pyteal.readthedocs.io/en/stable/installation.html)
-6. Algorand [Purestake node](https://developer.purestake.io/)
-
-## Background
-
-PyTeal is a python library for generating TEAL programs. PyTeal is used for writing smart contracts on the Algorand blockchain.
-To interact with the smart contract the Python SDK will be used to compile and deploy the PyTeal smart contract code.
-
-# Project Setup
-
-We setup Python virtual environment. The following commands will install and activate the virtual environment and then install dependencies.
-
-## Installing with Virtual environment
-
-```bash
-pip install virtualenv
-virtualenv venv
-source venv/bin/activate
-pip install pyteal
-```
-
-![https://imgur.com/pgG6fin.png](https://imgur.com/pgG6fin.png)
-
-`deactivate` to deactivate the virtual environment.
-
-`source venv/bin/activate` to activate virtualenv once again. Replace bin with Scripts on Windows.
+6. Algorand [Purestake node api key](https://developer.purestake.io/)
 
 # PyTeal AMM Smart Contract
 
