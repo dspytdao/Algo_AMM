@@ -99,3 +99,5 @@ In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains 
 [Amm Demo contract](https://github.com/maks-ivanov/amm-demo/blob/main/amm/contracts/contracts.py)
 
 [Creating Stateful Algorand Smart Contracts in Python with PyTeal](https://developer.algorand.org/articles/creating-stateful-algorand-smart-contracts-python-pyteal/)
+
+[How to publish PIP package](https://shobhitgupta.medium.com/how-to-publish-your-own-pip-package-560bde836b17)
