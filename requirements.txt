@@ -25,7 +25,7 @@ readme-renderer==37.2
 requests==2.28.1
 requests-toolbelt==0.9.1
 rfc3986==2.0.0
-rich==12.5.1
+rich==12.6.0
 SecretStorage==3.3.3
 semantic-version==2.10.0
 six==1.16.0
