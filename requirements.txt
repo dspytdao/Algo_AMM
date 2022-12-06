@@ -14,7 +14,7 @@ keyring==23.9.3
 more-itertools==8.14.0
 msgpack==1.0.4
 pkginfo==1.8.3
-py-algorand-sdk==1.18.0
+py-algorand-sdk==1.20.2
 pycparser==2.21
 pycryptodomex==3.15.0
 Pygments==2.13.0
