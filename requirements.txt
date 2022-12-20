@@ -29,7 +29,7 @@ rich==12.6.0
 SecretStorage==3.3.3
 semantic-version==2.10.0
 six==1.16.0
-twine==4.0.1
+twine==4.0.2
 urllib3==1.26.12
 webencodings==0.5.1
 zipp==3.11.0
