@@ -14,7 +14,7 @@ The core feature of the app is that we protect the owners of Voting shares by ke
 
 The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
 
-![](https://imgur.com/HILKB03.png)
+![Dashboard](https://imgur.com/HILKB03.png)
 
 [![Algo AMM](https://yt-embed.herokuapp.com/embed?v=uePtNvBP3oQ)](https://youtu.be/uePtNvBP3oQ "Algo AMM")
 
@@ -46,7 +46,7 @@ Liquidity Shares and Voting Shares can only be released after the creator of the
 5. [PyTEAL](https://pyteal.readthedocs.io/en/stable/installation.html)
 6. Algorand [Purestake node api key](https://developer.purestake.io/)
 
-# PyTeal AMM Smart Contract
+## PyTeal AMM Smart Contract
 
 PyTeal contracts are written in Python using any editor of your choice. `compileProgram` method produces the TEAL code which is then compiled into bytecode and deployed to the blockchain.
 
