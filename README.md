@@ -23,7 +23,10 @@ The goal is, by harnessing the power of free markets to aggregate collective kno
 We wrote contract for Prediction Market Constant Function Automated Market Maker with the help of PyTeal and Py-algorand-sdk.
 
 The front end application is written with react and vite.
-The repository for the Front-End is avalaible here: https://github.com/dspytdao/algo-amm-frontend
+
+[The repository for the front-end](https://github.com/dspytdao/algo-amm-frontend)
+
+[Website](https://algoamm.com)
 
 ## Overview
 
