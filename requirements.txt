@@ -7,7 +7,7 @@ cryptography==38.0.1
 docstring-parser==0.14.1
 docutils==0.19
 idna==3.4
-importlib-metadata==5.0.0
+importlib-metadata==6.0.0
 jaraco.classes==3.2.3
 jeepney==0.8.0
 keyring==23.11.0
