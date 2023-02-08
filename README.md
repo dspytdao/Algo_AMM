@@ -14,19 +14,17 @@ The core feature of the app is that we protect the owners of Voting shares by ke
 
 The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
 
-![Dashboard](https://imgur.com/HILKB03.png)
-
-[![Algo AMM](https://yt-embed.herokuapp.com/embed?v=uePtNvBP3oQ)](https://youtu.be/uePtNvBP3oQ "Algo AMM")
+![AMM](/assets/AMM.png)
 
 [Project Slides Deck](https://docs.google.com/presentation/d/1FBchISurC6Fsy-iEkmQ4gggEs7i6D4pRHab8gwOEyqk/edit?usp=sharing)
 
-We wrote contract for Prediction Market Constant Function Automated Market Maker with the help of PyTeal and Py-algorand-sdk.
+We wrote contract for Prediction Market Constant Function Automated Market Maker with the help of `PyTeal` and `Py-algorand-sdk`.
 
 The front end application is written with react and vite.
 
 [The repository for the front-end](https://github.com/dspytdao/algo-amm-frontend)
 
-[Website](https://algoamm.com)
+[AlgoAMM Live](https://algoamm.com)
 
 ## Overview
 
