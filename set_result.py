@@ -12,7 +12,7 @@ AlgoClient = AlgoClient(algod_token)
 
 APP_ID = 100248351
 
-app = App(AlgoClient.client, APP_ID )
+app = App(AlgoClient.client, APP_ID)
 
 app.set_result(
     funder=deployer,

@@ -17,7 +17,7 @@ pip install pyteal
 
 `source venv/bin/activate` to activate virtualenv once again. Replace bin with Scripts on Windows.
 
-# PyTeal AMM Smart Contract
+## PyTeal AMM Smart Contract
 
 PyTeal contracts are written in Python using any editor of your choice. `compileProgram` method produces the TEAL code which is then compiled into bytecode and deployed to the blockchain.
 
@@ -37,7 +37,7 @@ touch amm.py config.py helpers.py __init__.py
 
 In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains lower level methods and `config.py` keeps track of global variable and key configuration variables.
 
-# PyTeal Contract Configuration File
+## PyTeal Contract Configuration File
 
 In `config.py` we contain the global variables, except for `TOKEN_DEFAULT_AMOUNT`, to congifure the smart contract.
 
@@ -82,7 +82,7 @@ from contracts.config import (
 )
 ```
 
-# Main Conditional
+## Main Conditional
 
 ```python
     on_call_method = Txn.application_args[0]
@@ -113,7 +113,7 @@ from contracts.config import (
 
 This statement is the heart of the smart contract. Based on how the contract is called, it chooses which operation to run. For example, if `Txn.application_id()` is 0, then the code from `on_create` runs. If `Txn.on_completion()` is `OnComplete.NoOp`, then `on_call` runs. If `Txn.application_args[0]` is "setup", then `on_setup` runs. If either `Txn.on_completion()` are `OnComplete.OptIn`,`OnComplete.CloseOut`,`OnComplete.UpdateApplication` or none of the described cases are true, the program will exit an with error. Let’s look at each of these cases below.
 
-# On create
+## On create
 
 ```python
     on_create = Seq(
@@ -131,7 +131,7 @@ This part of the program is responsible for setting up the initial state of the 
 
 The values of `CREATOR_KEY`,`TOKEN_FUNDING_KEY` and `MIN_INCREMENT_KEY` keys are determined by the application call arguments from the `Txn.application_args` list. Meanhwile, `TOKEN_FUNDING_RESERVES`, `POOL_FUNDING_RESERVES` and `RESULT` are initialised as 0 integer values.
 
-# On setup
+## On setup
 
 ```python
 def get_setup():
@@ -239,7 +239,7 @@ def createYesToken(token_amount: TealType.uint64) -> Expr:
     )
 ```
 
-# On supply
+## On supply
 
 ```python
 def get_supply():
@@ -313,7 +313,7 @@ def mintAndSendPoolToken(receiver: TealType.bytes, amount: TealType.uint64) -> E
     )
 ```
 
-# On Withdraw
+## On Withdraw
 
 ```python
 def get_withdraw():
@@ -367,7 +367,7 @@ def withdrawLPToken(
     )
 ```
 
-# On Swap
+## On Swap
 
 ```python
 def get_swap():
@@ -461,12 +461,11 @@ def mintAndSendYesToken(
     )
 ```
 
-# On Result
+## On Result
 
 ```python
 def get_result():
     result = Txn.application_args[1]
-
     on_result = Seq(
         Assert(
             Txn.sender() == App.globalGet(CREATOR_KEY)
@@ -497,7 +496,7 @@ The code runs when an account calls `Txn.application_args[0]` that equals to `By
 
 Depending on the argument in `Txn.application_args[1]`, the creator should choose a yes or no result of the event to declare the winning option.
 
-# On Redemption
+## On Redemption
 
 ```python
 def get_redemption():
@@ -553,7 +552,7 @@ def redeemToken(
     )
 ```
 
-# Contract Demo
+## Contract Demo
 
 ## Create Account
 

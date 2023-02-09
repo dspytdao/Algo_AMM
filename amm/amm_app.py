@@ -1,4 +1,4 @@
-"""this file is to connect to the contract"""
+"""api to the contract"""
 import json
 from typing import Tuple
 from base64 import b64decode
