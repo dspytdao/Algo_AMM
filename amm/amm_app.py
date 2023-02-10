@@ -81,13 +81,13 @@ class App:
                 return pending_txn
 
             if pending_txn["pool-error"]:
-                raise Exception("Pool error:")
+                raise RuntimeError("Pool error:")
 
             last_status= self.client.status_after_block(last_round + 1)
 
             last_round += 1
 
-        raise Exception(
+        raise RuntimeError(
             f"Transaction {tx_id} not confirmed after {timeout} rounds"
         )
 
