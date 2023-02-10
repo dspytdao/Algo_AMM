@@ -14,7 +14,7 @@ The core feature of the app is that we protect the owners of Voting shares by ke
 
 The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
 
-![AMM](/assets/AMM.png)
+![Automated Market Maker](/assets/AMM.png)
 
 [Project Slides Deck](https://docs.google.com/presentation/d/1FBchISurC6Fsy-iEkmQ4gggEs7i6D4pRHab8gwOEyqk/edit?usp=sharing)
 
