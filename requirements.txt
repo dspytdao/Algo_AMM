@@ -3,7 +3,7 @@ certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.0.1
 commonmark==0.9.1
-cryptography==39.0.0
+cryptography==39.0.1
 docstring-parser==0.14.1
 docutils==0.19
 idna==3.4
