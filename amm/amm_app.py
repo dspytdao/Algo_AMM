@@ -15,7 +15,7 @@ from amm.utils.account import Account
 
 MIN_BALANCE_REQUIREMENT = (
     # min account balance
-    110_000
+    210_000
     # additional min balance for 4 assets
     + 100_000 * 4
 )
