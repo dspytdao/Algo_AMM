@@ -4,19 +4,15 @@
 
 ## Summary
 
-Algo AMM allows you to trade on the outcomes of events, and follow the odds to garner accurate insights about the future.
+Algo AMM is an automated prediction market maker on Algorand that allows users to trade on the outcomes of events, and follow the odds to garner accurate insights about the future.
 
-Liquidity Providers supply stable coins in return for the liquidity shares.
-
-The liquidity lets users to buy or sell Voting Shares, which are redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect.
-
-The core feature of the app is that we protect the owners of Voting shares by keeping the reserves of stable assets, primarily in case of liquidity drain.
+Our target market is traders, speculators and investors who are interested in taking advantage of the predictive power of markets. The user problem we are addressing is the difficulty in predicting outcomes of events accurately and reliably. Our solution is an automated prediction market maker that allows users to trade on the outcomes of events, and follow the odds to garner accurate insights about the future. We provide liquidity for users to buy or sell Voting Shares, which can be redeemed for 1 unit of the stable asset if the outcome is resolved as correct, and become worthless if it’s incorrect.
 
 The goal is, by harnessing the power of free markets to aggregate collective knowledge and provide the general public with an unbiased source of truth in regards to the likelihood of certain significant events happening in the future.
 
 ![Automated Market Maker](/assets/AMM.png)
 
-[Project Slides Deck](https://docs.google.com/presentation/d/1FBchISurC6Fsy-iEkmQ4gggEs7i6D4pRHab8gwOEyqk/edit?usp=sharing)
+[Project Slides Deck](https://docs.google.com/presentation/d/1FBchISurC6Fsy-iEkmQ4gggEs7i6D4pRHab8gwOEyqk/)
 
 We wrote contract for Prediction Market Constant Function Automated Market Maker with the help of `PyTeal` and `Py-algorand-sdk`.
 
@@ -25,6 +21,12 @@ The front end application is written with react and vite.
 [The repository for the front-end](https://github.com/dspytdao/algo-amm-frontend)
 
 [AlgoAMM Live](https://algoamm.com)
+
+## Founders
+
+Pavel Fedotov: [LinkedIn](https://www.linkedin.com/in/pavel-fedotov-pinsave/) [Twitter](https://twitter.com/pfedprog) [GitHub](https://github.com/pfed-prog/)
+
+Grigore Gabriel Trifan: [LinkedIn](https://www.linkedin.com/in/grigore-trifan-666biyz/) [Twitter](https://twitter.com/grigore_trifan) [GitHub](https://github.com/GregTrifan)
 
 ## Overview
 
@@ -65,6 +67,8 @@ In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains 
 
 [Testnet Dispensary](https://dispenser.testnet.aws.algodev.network/)
 
+[Algorand Dispenser](https://bank.testnet.algorand.network/)
+
 [Py-algorand-sdk](https://py-algorand-sdk.readthedocs.io/en/latest/index.html)
 
 [AlgoExplorer](https://testnet.algoexplorer.io/address/)
@@ -78,3 +82,5 @@ In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains 
 [Creating Stateful Algorand Smart Contracts in Python with PyTeal](https://developer.algorand.org/articles/creating-stateful-algorand-smart-contracts-python-pyteal/)
 
 [How to publish PIP package](https://shobhitgupta.medium.com/how-to-publish-your-own-pip-package-560bde836b17)
+
+[Algorand Ecosystem Algo Amm page](https://ecosystem.algorand.com/project/algo-amm)
