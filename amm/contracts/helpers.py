@@ -44,7 +44,7 @@ def send_token(
 
 
 def opt_in(token_key: TealType.bytes) -> Expr:
-    """asa optin"""
+    """asa opt in"""
     return send_token(token_key, Global.current_application_address(), Int(0))
 
 
@@ -258,7 +258,7 @@ def redeem_token(
     receiver: TealType.bytes,
     result_token_amount: TealType.uint64,
 ) -> Expr:
-    """reedems token"""
+    """redeems token"""
     return Seq(
         send_token(
             TOKEN_FUNDING_KEY,

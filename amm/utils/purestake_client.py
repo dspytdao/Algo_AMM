@@ -49,13 +49,13 @@ class AlgoClient:
         # Sign with secret key of creator
         stxn = txn.sign(account.private_key)
 
-        # Send the transaction to the network and retrieve the txid.
+        # Send the transaction to the network and retrieve the tx id.
 
         txid = self.client.send_transaction(stxn)
         print(f"Signed transaction with txID: {txid}")
         # Wait for the transaction to be confirmed
         response = self.wait_for_confirmation(txid)
-        print("TXID: ", txid)
+        print("TX ID: ", txid)
         confirmed_round = response['confirmed-round']
         print(f"Result confirmed in round: {confirmed_round}")
         return response['asset-index']

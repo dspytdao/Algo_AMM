@@ -36,7 +36,7 @@ Liquidity Pool provides a foundation for users to purchase and redeem spawned to
 
 The purchase price for each token is determined by equation: x + y = k. Where x is the amount of A tokens in the AMM, y is the amount of B tokens in the AMM.
 
-Once the event has occured the price for one token should resolve to 1, while 0 for another.
+Once the event has occurred the price for one token should resolve to 1, while 0 for another.
 
 Liquidity Shares and Voting Shares can only be released after the creator of the contract moderated the outcome.
 
@@ -75,7 +75,7 @@ In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains 
 
 [Algorand: Build with Python](https://developer.algorand.org/docs/get-started/dapps/pyteal/)
 
-[Alogrand: Smart contract details](https://developer.algorand.org/docs/get-details/dapps/smart-contracts/apps/)
+[Algorand: Smart contract details](https://developer.algorand.org/docs/get-details/dapps/smart-contracts/apps/)
 
 [Amm Demo contract](https://github.com/maks-ivanov/amm-demo/blob/main/amm/contracts/contracts.py)
 

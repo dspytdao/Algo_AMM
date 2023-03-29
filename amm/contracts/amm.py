@@ -144,7 +144,7 @@ def get_result():
 
 
 def get_redemption():
-    """reedems winning tokens"""
+    """redeems winning tokens"""
     token_txn_index = Txn.group_index() - Int(1)
 
     on_redemption = Seq(
