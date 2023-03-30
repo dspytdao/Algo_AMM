@@ -4,7 +4,7 @@ from algosdk.transaction import AssetConfigTxn
 
 
 class AlgoClient:
-    """ algod client """
+    """algod client"""
     ALGOD_ADDRESS = "https://testnet-algorand.api.purestake.io/ps2"
 
     def __init__(self, algod_token):
@@ -17,7 +17,11 @@ class AlgoClient:
         self.params = self.client.suggested_params()
 
     def wait_for_confirmation(self, tx_id):
-        """util to monitor confirmation"""
+        """
+        Utility to monitor transaction confirmation.
+        Args:
+            tx_id: transaction id
+        """
         last_round = self.client.status().get("last-round")
         tx_info = self.client.pending_transaction_info(tx_id)
         while not (tx_info.get("confirmed-round") and tx_info.get("confirmed-round") > 0):
@@ -30,7 +34,11 @@ class AlgoClient:
         return tx_info
 
     def create_asset(self, account):
-        """create asset"""
+        """
+        Create asset.
+        Args:
+            account: account to sign and assign created asset
+        """
         sender = account.public_key
 
         txn = AssetConfigTxn(
@@ -48,14 +56,10 @@ class AlgoClient:
             url=None,
             decimals=0)
 
-        # Sign with secret key of creator
         signed_txn = txn.sign(account.private_key)
-
-        # Send the transaction to the network and retrieve the tx id.
 
         tx_id = self.client.send_transaction(signed_txn)
         print(f"Signed transaction with txID: {tx_id}")
-        # Wait for the transaction to be confirmed
         response = self.wait_for_confirmation(tx_id)
         print("TX ID: ", tx_id)
         confirmed_round = response['confirmed-round']

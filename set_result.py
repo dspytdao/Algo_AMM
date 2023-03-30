@@ -16,5 +16,5 @@ app = App(AlgoClient.client, APP_ID)
 
 app.set_result(
     funder=deployer,
-    second_argument = b"yes",
+    second_argument=b"yes",
 )

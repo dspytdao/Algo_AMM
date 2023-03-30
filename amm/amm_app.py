@@ -25,7 +25,12 @@ MIN_BALANCE_REQUIREMENT = (
 def fully_compile_contract(
     client: AlgodClient, contract: Expr
 ) -> bytes:
-    """compiles teal
+    """
+    Compiles teal.
+    Args:
+        client: algorand client
+        contract: teal contract
+    Returns: bytecode
     """
     teal = compileTeal(contract, mode=Mode.Application, version=6)
     response = client.compile(teal)
@@ -35,7 +40,7 @@ def fully_compile_contract(
 
 def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
     """Get the compiled TEAL contracts for the amm.
-    Args:q
+    Args:
         client: An algod client that has the ability to compile TEAL programs.
     Returns:
         A tuple of 2 byte strings. The first is the approval program, and the
@@ -66,13 +71,16 @@ class App:
         self.no_token: int
 
     def update_app_address(self):
-        """ updates app address"""
+        """
+        Updates app address.
+        """
         self.app_addr = get_application_address(self.app_id)
 
     def wait_for_transaction(
         self, tx_id: str, timeout: int = 10
     ) -> json:
-        """monitors tx
+        """
+        Monitors transaction completion.
         """
 
         last_status = self.client.status()
@@ -102,7 +110,8 @@ class App:
         min_increment: int,
         deployer: Account
     ) -> int:
-        """Creates a new amm.
+        """
+        Creates a new amm.
         Args:
             deployer: The account that will create the amm application.
             token: The id of liquidity token in the liquidity pool,
@@ -148,12 +157,13 @@ class App:
         self,
         funder: Account
     ) -> int:
-        """Finish setting up an amm.
+        """
+        Finish setting up an amm.
         This operation funds the pool account, creates pool token,
         and opts app into tokens A and B, all in one atomic transaction group.
         Args:
             funder: The account providing the funding for the escrow account.
-        Return: app asset ids
+        Return: app asset ids.
         """
 
         fund_app_tx = PaymentTxn(
@@ -202,7 +212,8 @@ class App:
         self,
         account: Account
     ) -> None:
-        """Opts into Pool Token
+        """
+        Opts into Pool Token.
         Args:
             account: The account opting into the token.
         """
@@ -220,7 +231,8 @@ class App:
         self,
         account: Account
     ) -> None:
-        """Opts into Pool Token
+        """
+        Opts into Pool Token.
         Args:
             account: The account opting into the token.
         """
@@ -238,7 +250,7 @@ class App:
         self,
         account: Account
     ) -> None:
-        """Opts into Pool Token
+        """Opts into Pool Token.
         Args:
             account: The account opting into the token.
         """
@@ -255,9 +267,13 @@ class App:
     def supply(
         self, quantity: int, supplier: Account
     ) -> None:
-        """Supply liquidity to the pool"""
+        """
+        Supply liquidity to the pool.
+        Args:
+            quantity: quantity
+            supplier: supplier
+        """
 
-        # pay for the fee incurred by AMM for sending back the pool token
         fee_tx = PaymentTxn(
             sender=supplier.public_key,
             receiver=self.app_addr,
@@ -296,8 +312,8 @@ class App:
     def swap(
         self, option: str, quantity: int, supplier: Account
     ) -> None:
-        """swap stable for option
-
+        """
+        Swap stable for an AMM option.
         """
         if option == 'yes':
             second_argument = b"buy_yes"
@@ -345,12 +361,12 @@ class App:
         self, pool_token_amount: int,
         withdrawal_account: Account
     ) -> None:
-        """Withdraw liquidity  + rewards from the pool back to supplier.
+        """
+        Withdraw liquidity  + rewards from the pool back to supplier.
         Supplier should receive stablecoin + fees proportional
         to the liquidity share in the pool they choose to withdraw.
         """
 
-        # pay for the fee incurred by AMM for sending back tokens A and B
         fee_tx = PaymentTxn(
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
@@ -388,9 +404,17 @@ class App:
         self, token_in: int, token_amount: int,
         withdrawal_account: Account, token_out: int
     ) -> None:
-        """redeems """
+        """
+        Redeems winning token for stablecoin.
+        First, pay for the fee incurred by AMM for sending back tokens A and B.
+        Then conduct asset transfer and application call.
+        Args:
+            token_in: should be a winning token
+            token_amount: token amount
+            withdrawal_account: withdrawal account
+            token_out: stablecoin
+        """
 
-        # pay for the fee incurred by AMM for sending back tokens A and B
         fee_tx = PaymentTxn(
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
@@ -429,7 +453,11 @@ class App:
         funder: Account,
         second_argument
     ) -> None:
-        """ sets result of the event
+        """
+        Sets result of the event.
+        Args:
+            funder: creator of the amm
+            second_argument: result
         """
 
         fee_tx = PaymentTxn(
@@ -458,12 +486,11 @@ class App:
         self,
         closing_account: Account
     ) -> None:
-        """Close an AMM.
+        """
+        Closes an AMM.
         Args:
-            client: An Algorand client.
-            app_id: The app ID of the amm.
-            closer: closer account public address. Must be the original creator of the pool.
-            private_key: closer account private key to sign the transactions.
+            closing_account: closer account public address.
+            Must be the original creator of the pool.
         """
 
         delete_tx = ApplicationDeleteTxn(

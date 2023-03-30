@@ -14,7 +14,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/dspytdao/Algo_AMM",
     packages=setuptools.find_packages(),
-    install_requires = ['pyteal', 'py-algorand-sdk'],
+    install_requires=['pyteal', 'py-algorand-sdk'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

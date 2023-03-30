@@ -88,3 +88,8 @@ In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains 
 [Algorand Ecosystem Algo AMM page](https://ecosystem.algorand.com/project/algo-amm)
 
 [How To Use unittest to Write a Test Case for a Function in Python](https://www.digitalocean.com/community/tutorials/how-to-use-unittest-to-write-a-test-case-for-a-function-in-python)
+
+## More Information about Dspyt
+
+[Dspyt Homepage](https://dspyt.com)
+[Dspyt GitHub DAO Page](https://github.com/dspytdao)
