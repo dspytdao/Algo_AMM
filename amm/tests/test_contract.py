@@ -1,7 +1,9 @@
 """tests"""
 from unittest import TestCase
 import os
+from base64 import b64decode
 from dotenv import load_dotenv
+
 
 from amm.amm_app import App
 from amm.utils.account import Account
@@ -30,11 +32,13 @@ class TestAmm(TestCase):
         stable_token = self.algo_client.create_asset(self.deployer)
         assert isinstance(
             stable_token, int), "Provide sufficient algo to deployer"
+
         app_id = self.app.create_amm_app(
             token=stable_token,
             min_increment=1000,
             deployer=self.deployer
         )
+
         assert isinstance(app_id, int), "Provide sufficient algo to deployer"
 
         pool_tokens = self.app.setup_amm_app(
@@ -76,6 +80,21 @@ class TestAmm(TestCase):
             second_argument=b"yes",
             funder=self.deployer
         )
+
+        app = self.algo_client.client.application_info(app_id)
+
+        glob_state = app['params']['global-state']
+
+        ids = {}
+        key = ""
+        for i, _ in enumerate(glob_state):
+            key = b64decode(glob_state[i]['key']).decode("utf-8")
+            if glob_state[i]['value']['uint'] != 0:
+                ids[key] = glob_state[i]['value']['uint']
+            else:
+                ids[key] = glob_state[i]['value']['bytes']
+
+        print(ids)
 
         yes_token_amount = 83_333
 

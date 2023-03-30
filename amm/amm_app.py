@@ -1,5 +1,4 @@
 """api to the contract"""
-import json
 from typing import Tuple
 from base64 import b64decode
 
@@ -78,9 +77,12 @@ class App:
 
     def wait_for_transaction(
         self, tx_id: str, timeout: int = 10
-    ) -> json:
+    ):
         """
         Monitors transaction completion.
+        Args:
+            tx_id: transaction id
+            timeout: timeout in rounds
         """
 
         last_status = self.client.status()
@@ -116,7 +118,7 @@ class App:
             deployer: The account that will create the amm application.
             token: The id of liquidity token in the liquidity pool,
             min_increment: min int to fund the pool
-        Returns:
+        Return:
             The ID of the newly created amm app.
         """
         self.stable_token = token
@@ -250,7 +252,8 @@ class App:
         self,
         account: Account
     ) -> None:
-        """Opts into Pool Token.
+        """
+        Opts into Pool Token.
         Args:
             account: The account opting into the token.
         """
@@ -314,6 +317,10 @@ class App:
     ) -> None:
         """
         Swap stable for an AMM option.
+        Args:
+            option: string either yes or no option
+            quantity: token amount
+            supplier: account of the sender
         """
         if option == 'yes':
             second_argument = b"buy_yes"
@@ -365,6 +372,9 @@ class App:
         Withdraw liquidity  + rewards from the pool back to supplier.
         Supplier should receive stablecoin + fees proportional
         to the liquidity share in the pool they choose to withdraw.
+        Args:
+            pool_token_amount: token amount
+            withdrawal_account: account of the sender to withdraw stablecoins
         """
 
         fee_tx = PaymentTxn(
