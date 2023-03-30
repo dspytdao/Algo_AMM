@@ -38,12 +38,12 @@ def fully_compile_contract(
 
 
 def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
-    """Get the compiled TEAL contracts for the amm.
+    """
+    Get the compiled TEAL contracts for the AMM.
     Args:
         client: An algod client that has the ability to compile TEAL programs.
     Returns:
-        A tuple of 2 byte strings. The first is the approval program, and the
-        second is the clear state program.
+        The approval program and the clear state program.
     """
 
     approval_program_compiled = fully_compile_contract(
