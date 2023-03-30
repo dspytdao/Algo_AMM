@@ -4,14 +4,15 @@ from typing import Tuple
 from base64 import b64decode
 
 from pyteal import compileTeal, Mode, Expr
-
-from algosdk.v2client.algod import AlgodClient
 from algosdk import encoding
-from algosdk.future import transaction
+from algosdk.transaction import (StateSchema, ApplicationCreateTxn,
+                                 OnComplete, PaymentTxn, ApplicationCallTxn, assign_group_id,
+                                 AssetOptInTxn, AssetTransferTxn, ApplicationDeleteTxn)
+from algosdk.v2client.algod import AlgodClient
 from algosdk.logic import get_application_address
 
-from amm.contracts.amm import approval_program, clear_program
 from amm.utils.account import Account
+from amm.contracts.amm import approval_program, clear_program
 
 MIN_BALANCE_REQUIREMENT = (
     # min account balance
@@ -112,9 +113,9 @@ class App:
         self.stable_token = token
         approval, clear = get_contracts(self.client)
 
-        global_schema = transaction.StateSchema(
+        global_schema = StateSchema(
             num_uints=13, num_byte_slices=1)
-        local_schema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
+        local_schema = StateSchema(num_uints=0, num_byte_slices=0)
 
         app_args = [
             encoding.decode_address(deployer.public_key),
@@ -122,9 +123,9 @@ class App:
             min_increment.to_bytes(8, "big"),
         ]
 
-        txn = transaction.ApplicationCreateTxn(
+        txn = ApplicationCreateTxn(
             sender=deployer.public_key,
-            on_complete=transaction.OnComplete.NoOpOC,
+            on_complete=OnComplete.NoOpOC,
             approval_program=approval,
             clear_program=clear,
             global_schema=global_schema,
@@ -155,23 +156,23 @@ class App:
         Return: app asset ids
         """
 
-        fund_app_tx = transaction.PaymentTxn(
+        fund_app_tx = PaymentTxn(
             sender=funder.public_key,
             receiver=self.app_addr,
             amt=MIN_BALANCE_REQUIREMENT,
             sp=self.suggested_params,
         )
 
-        setup_tx = transaction.ApplicationCallTxn(
+        setup_tx = ApplicationCallTxn(
             sender=funder.public_key,
             index=self.app_id,
-            on_complete=transaction.OnComplete.NoOpOC,
+            on_complete=OnComplete.NoOpOC,
             app_args=[b"setup"],
             foreign_assets=[self.stable_token],
             sp=self.suggested_params,
         )
 
-        transaction.assign_group_id([fund_app_tx, setup_tx])
+        assign_group_id([fund_app_tx, setup_tx])
 
         signed_fund_spp_txn = fund_app_tx.sign(funder.private_key)
         signed_setup_tx = setup_tx.sign(funder.private_key)
@@ -206,7 +207,7 @@ class App:
             account: The account opting into the token.
         """
 
-        opt_in_tx = transaction.AssetOptInTxn(
+        opt_in_tx = AssetOptInTxn(
             sender=account.public_key, index=self.pool_token, sp=self.suggested_params
         )
 
@@ -224,7 +225,7 @@ class App:
             account: The account opting into the token.
         """
 
-        opt_in_tx = transaction.AssetOptInTxn(
+        opt_in_tx = AssetOptInTxn(
             sender=account.public_key, index=self.no_token, sp=self.suggested_params
         )
 
@@ -242,7 +243,7 @@ class App:
             account: The account opting into the token.
         """
 
-        opt_in_tx = transaction.AssetOptInTxn(
+        opt_in_tx = AssetOptInTxn(
             sender=account.public_key, index=self.yes_token, sp=self.suggested_params
         )
 
@@ -257,14 +258,14 @@ class App:
         """Supply liquidity to the pool"""
 
         # pay for the fee incurred by AMM for sending back the pool token
-        fee_tx = transaction.PaymentTxn(
+        fee_tx = PaymentTxn(
             sender=supplier.public_key,
             receiver=self.app_addr,
             amt=MIN_BALANCE_REQUIREMENT,
             sp=self.suggested_params,
         )
 
-        token_tx = transaction.AssetTransferTxn(
+        token_tx = AssetTransferTxn(
             sender=supplier.public_key,
             receiver=self.app_addr,
             index=self.stable_token,
@@ -272,17 +273,17 @@ class App:
             sp=self.suggested_params,
         )
 
-        app_call_tx = transaction.ApplicationCallTxn(
+        app_call_tx = ApplicationCallTxn(
             sender=supplier.public_key,
             index=self.app_id,
-            on_complete=transaction.OnComplete.NoOpOC,
+            on_complete=OnComplete.NoOpOC,
             app_args=[b"supply"],
             foreign_assets=[self.stable_token, self.pool_token,
                             self.yes_token, self.no_token],
             sp=self.suggested_params,
         )
 
-        transaction.assign_group_id([fee_tx, token_tx, app_call_tx])
+        assign_group_id([fee_tx, token_tx, app_call_tx])
         signed_fee_tx = fee_tx.sign(supplier.private_key)
         signed_token_tx = token_tx.sign(supplier.private_key)
         signed_app_call_tx = app_call_tx.sign(supplier.private_key)
@@ -305,14 +306,14 @@ class App:
         else:
             return
 
-        fee_tx = transaction.PaymentTxn(
+        fee_tx = PaymentTxn(
             sender=supplier.public_key,
             receiver=self.app_addr,
             amt=2_000,
             sp=self.suggested_params,
         )
 
-        token_tx = transaction.AssetTransferTxn(
+        token_tx = AssetTransferTxn(
             sender=supplier.public_key,
             receiver=self.app_addr,
             index=self.stable_token,
@@ -320,17 +321,17 @@ class App:
             sp=self.suggested_params,
         )
 
-        app_call_tx = transaction.ApplicationCallTxn(
+        app_call_tx = ApplicationCallTxn(
             sender=supplier.public_key,
             index=self.app_id,
-            on_complete=transaction.OnComplete.NoOpOC,
+            on_complete=OnComplete.NoOpOC,
             app_args=[b"swap", second_argument],
             foreign_assets=[self.stable_token, self.pool_token,
                             self.yes_token, self.no_token],
             sp=self.suggested_params,
         )
 
-        transaction.assign_group_id([fee_tx, token_tx, app_call_tx])
+        assign_group_id([fee_tx, token_tx, app_call_tx])
         signed_fee_tx = fee_tx.sign(supplier.private_key)
         signed_token_tx = token_tx.sign(supplier.private_key)
         signed_app_call_tx = app_call_tx.sign(supplier.private_key)
@@ -350,14 +351,14 @@ class App:
         """
 
         # pay for the fee incurred by AMM for sending back tokens A and B
-        fee_tx = transaction.PaymentTxn(
+        fee_tx = PaymentTxn(
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
             amt=2_000,
             sp=self.suggested_params,
         )
 
-        pool_token_tx = transaction.AssetTransferTxn(
+        pool_token_tx = AssetTransferTxn(
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
             index=self.pool_token,
@@ -365,16 +366,16 @@ class App:
             sp=self.suggested_params,
         )
 
-        app_call_tx = transaction.ApplicationCallTxn(
+        app_call_tx = ApplicationCallTxn(
             sender=withdrawal_account.public_key,
             index=self.app_id,
-            on_complete=transaction.OnComplete.NoOpOC,
+            on_complete=OnComplete.NoOpOC,
             app_args=[b"withdraw"],
             foreign_assets=[self.stable_token, self.pool_token],
             sp=self.suggested_params,
         )
 
-        transaction.assign_group_id([fee_tx, pool_token_tx, app_call_tx])
+        assign_group_id([fee_tx, pool_token_tx, app_call_tx])
         signed_fee_tx = fee_tx.sign(withdrawal_account.private_key)
         signed_token_tx = pool_token_tx.sign(withdrawal_account.private_key)
         signed_app_call_tx = app_call_tx.sign(withdrawal_account.private_key)
@@ -390,14 +391,14 @@ class App:
         """redeems """
 
         # pay for the fee incurred by AMM for sending back tokens A and B
-        fee_tx = transaction.PaymentTxn(
+        fee_tx = PaymentTxn(
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
             amt=2_000,
             sp=self.suggested_params,
         )
 
-        token_tx = transaction.AssetTransferTxn(
+        token_tx = AssetTransferTxn(
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
             index=token_in,
@@ -405,16 +406,16 @@ class App:
             sp=self.suggested_params,
         )
 
-        app_call_tx = transaction.ApplicationCallTxn(
+        app_call_tx = ApplicationCallTxn(
             sender=withdrawal_account.public_key,
             index=self.app_id,
-            on_complete=transaction.OnComplete.NoOpOC,
+            on_complete=OnComplete.NoOpOC,
             app_args=[b"redeem"],
             foreign_assets=[token_out, token_in],
             sp=self.suggested_params,
         )
 
-        transaction.assign_group_id([fee_tx, token_tx, app_call_tx])
+        assign_group_id([fee_tx, token_tx, app_call_tx])
         signed_fee_tx = fee_tx.sign(withdrawal_account.private_key)
         signed_token_tx = token_tx.sign(withdrawal_account.private_key)
         signed_app_call_tx = app_call_tx.sign(withdrawal_account.private_key)
@@ -431,22 +432,22 @@ class App:
         """ sets result of the event
         """
 
-        fee_tx = transaction.PaymentTxn(
+        fee_tx = PaymentTxn(
             sender=funder.public_key,
             receiver=self.app_addr,
             amt=2_000,
             sp=self.suggested_params,
         )
 
-        call_tx = transaction.ApplicationCallTxn(
+        call_tx = ApplicationCallTxn(
             sender=funder.public_key,
             index=self.app_id,
-            on_complete=transaction.OnComplete.NoOpOC,
+            on_complete=OnComplete.NoOpOC,
             app_args=[b"result", second_argument],
             sp=self.suggested_params,
         )
 
-        transaction.assign_group_id([fee_tx, call_tx])
+        assign_group_id([fee_tx, call_tx])
         signed_fee_tx = fee_tx.sign(funder.private_key)
         signed_app_call_tx = call_tx.sign(funder.private_key)
 
@@ -465,7 +466,7 @@ class App:
             private_key: closer account private key to sign the transactions.
         """
 
-        delete_tx = transaction.ApplicationDeleteTxn(
+        delete_tx = ApplicationDeleteTxn(
             sender=closing_account.public_key,
             index=self.app_id,
             sp=self.client.suggested_params(),

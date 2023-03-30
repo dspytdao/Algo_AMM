@@ -1,6 +1,6 @@
 """algod client"""
 from algosdk.v2client import algod
-from algosdk.future import transaction
+from algosdk.transaction import AssetConfigTxn
 
 
 class AlgoClient:
@@ -33,9 +33,7 @@ class AlgoClient:
         """create asset"""
         sender = account.public_key
 
-
-####
-        txn = transaction.AssetConfigTxn(
+        txn = AssetConfigTxn(
             sender=sender,
             sp=self.params,
             total=1_000_000_000,
