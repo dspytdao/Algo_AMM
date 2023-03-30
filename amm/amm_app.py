@@ -20,6 +20,7 @@ MIN_BALANCE_REQUIREMENT = (
     + 100_000 * 4
 )
 
+
 def fully_compile_contract(
     client: AlgodClient, contract: Expr
 ) -> bytes:
@@ -40,8 +41,10 @@ def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
         second is the clear state program.
     """
 
-    approval_program_compiled = fully_compile_contract(client, approval_program())
-    clear_state_program_compiled = fully_compile_contract(client, clear_program())
+    approval_program_compiled = fully_compile_contract(
+        client, approval_program())
+    clear_state_program_compiled = fully_compile_contract(
+        client, clear_program())
 
     return approval_program_compiled, clear_state_program_compiled
 
@@ -50,15 +53,16 @@ class App:
     """ Algorand App """
     # pylint: disable=too-many-instance-attributes
     # Eight is reasonable in this case.
-    def __init__(self, client: AlgodClient, app_id = 0):
+
+    def __init__(self, client: AlgodClient, app_id=0):
         self.client = client
         self.suggested_params = client.suggested_params()
         self.app_id = app_id
         self.app_addr = get_application_address(app_id)
-        self.stable_token:int
-        self.pool_token:int
-        self.yes_token:int
-        self.no_token:int
+        self.stable_token: int
+        self.pool_token: int
+        self.yes_token: int
+        self.no_token: int
 
     def update_app_address(self):
         """ updates app address"""
@@ -72,7 +76,7 @@ class App:
 
         last_status = self.client.status()
         last_round = last_status["last-round"]
-        start_round= last_round
+        start_round = last_round
 
         while last_round < start_round + timeout:
             pending_txn = self.client.pending_transaction_info(tx_id)
@@ -83,7 +87,7 @@ class App:
             if pending_txn["pool-error"]:
                 raise RuntimeError("Pool error:")
 
-            last_status= self.client.status_after_block(last_round + 1)
+            last_status = self.client.status_after_block(last_round + 1)
 
             last_round += 1
 
@@ -108,7 +112,8 @@ class App:
         self.stable_token = token
         approval, clear = get_contracts(self.client)
 
-        global_schema = transaction.StateSchema(num_uints=13, num_byte_slices=1)
+        global_schema = transaction.StateSchema(
+            num_uints=13, num_byte_slices=1)
         local_schema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
 
         app_args = [
@@ -132,17 +137,16 @@ class App:
 
         self.client.send_transaction(signed_tx)
 
-        response = self.wait_for_transaction( signed_tx.get_txid())
+        response = self.wait_for_transaction(signed_tx.get_txid())
         assert response["application-index"] is not None and response["application-index"] > 0
-        self.app_id=response["application-index"]
+        self.app_id = response["application-index"]
         self.update_app_address()
         return response["application-index"]
 
-
     def setup_amm_app(
-            self,
-            funder: Account
-        ) -> int:
+        self,
+        funder: Account
+    ) -> int:
         """Finish setting up an amm.
         This operation funds the pool account, creates pool token,
         and opts app into tokens A and B, all in one atomic transaction group.
@@ -175,7 +179,8 @@ class App:
         self.client.send_transactions([signed_fund_spp_txn, signed_setup_tx])
 
         self.wait_for_transaction(signed_fund_spp_txn.get_txid())
-        glob_state = self.client.application_info(self.app_id)['params']['global-state']
+        glob_state = self.client.application_info(
+            self.app_id)['params']['global-state']
 
         ids = {}
 
@@ -191,7 +196,6 @@ class App:
                 self.no_token = glob_state[i]['value']['uint']
 
         return ids
-
 
     def opt_in_to_pool_token(
         self,
@@ -211,7 +215,6 @@ class App:
         self.client.send_transaction(signed_opt_in_tx)
         self.wait_for_transaction(signed_opt_in_tx.get_txid())
 
-
     def opt_in_to_no_token(
         self,
         account: Account
@@ -230,7 +233,6 @@ class App:
         self.client.send_transaction(signed_opt_in_tx)
         self.wait_for_transaction(signed_opt_in_tx.get_txid())
 
-
     def opt_in_to_yes_token(
         self,
         account: Account
@@ -240,21 +242,19 @@ class App:
             account: The account opting into the token.
         """
 
-        optin_tx = transaction.AssetOptInTxn(
+        opt_in_tx = transaction.AssetOptInTxn(
             sender=account.public_key, index=self.yes_token, sp=self.suggested_params
         )
 
-        signed_opt_in_tx = optin_tx.sign(account.private_key)
+        signed_opt_in_tx = opt_in_tx.sign(account.private_key)
 
         self.client.send_transaction(signed_opt_in_tx)
         self.wait_for_transaction(signed_opt_in_tx.get_txid())
 
-
     def supply(
         self, quantity: int, supplier: Account
     ) -> None:
-        """Supply liquidity to the pool.
-        """
+        """Supply liquidity to the pool"""
 
         # pay for the fee incurred by AMM for sending back the pool token
         fee_tx = transaction.PaymentTxn(
@@ -277,7 +277,8 @@ class App:
             index=self.app_id,
             on_complete=transaction.OnComplete.NoOpOC,
             app_args=[b"supply"],
-            foreign_assets=[self.stable_token, self.pool_token, self.yes_token, self.no_token],
+            foreign_assets=[self.stable_token, self.pool_token,
+                            self.yes_token, self.no_token],
             sp=self.suggested_params,
         )
 
@@ -291,7 +292,6 @@ class App:
         )
         self.wait_for_transaction(signed_app_call_tx.get_txid())
 
-
     def swap(
         self, option: str, quantity: int, supplier: Account
     ) -> None:
@@ -300,7 +300,7 @@ class App:
         """
         if option == 'yes':
             second_argument = b"buy_yes"
-        elif option =='no':
+        elif option == 'no':
             second_argument = b"buy_no"
         else:
             return
@@ -324,8 +324,9 @@ class App:
             sender=supplier.public_key,
             index=self.app_id,
             on_complete=transaction.OnComplete.NoOpOC,
-            app_args=[ b"swap", second_argument],
-            foreign_assets=[self.stable_token, self.pool_token, self.yes_token, self.no_token],
+            app_args=[b"swap", second_argument],
+            foreign_assets=[self.stable_token, self.pool_token,
+                            self.yes_token, self.no_token],
             sp=self.suggested_params,
         )
 
@@ -339,9 +340,8 @@ class App:
         )
         self.wait_for_transaction(signed_app_call_tx.get_txid())
 
-
     def withdraw(
-        self, pool_token_amount:int,
+        self, pool_token_amount: int,
         withdrawal_account: Account
     ) -> None:
         """Withdraw liquidity  + rewards from the pool back to supplier.
@@ -379,9 +379,9 @@ class App:
         signed_token_tx = pool_token_tx.sign(withdrawal_account.private_key)
         signed_app_call_tx = app_call_tx.sign(withdrawal_account.private_key)
 
-        self.client.send_transactions([signed_fee_tx, signed_token_tx, signed_app_call_tx])
+        self.client.send_transactions(
+            [signed_fee_tx, signed_token_tx, signed_app_call_tx])
         self.wait_for_transaction(signed_app_call_tx.get_txid())
-
 
     def redeem(
         self, token_in: int, token_amount: int,
@@ -396,7 +396,6 @@ class App:
             amt=2_000,
             sp=self.suggested_params,
         )
-
 
         token_tx = transaction.AssetTransferTxn(
             sender=withdrawal_account.public_key,
@@ -420,15 +419,15 @@ class App:
         signed_token_tx = token_tx.sign(withdrawal_account.private_key)
         signed_app_call_tx = app_call_tx.sign(withdrawal_account.private_key)
 
-        self.client.send_transactions([signed_fee_tx, signed_token_tx, signed_app_call_tx])
+        self.client.send_transactions(
+            [signed_fee_tx, signed_token_tx, signed_app_call_tx])
         self.wait_for_transaction(signed_app_call_tx.get_txid())
-
 
     def set_result(
         self,
         funder: Account,
         second_argument
-    )-> None:
+    ) -> None:
         """ sets result of the event
         """
 
@@ -454,11 +453,10 @@ class App:
         self.client.send_transactions([signed_fee_tx, signed_app_call_tx])
         self.wait_for_transaction(signed_app_call_tx.get_txid())
 
-
     def close_amm(
         self,
         closing_account: Account
-    )-> None:
+    ) -> None:
         """Close an AMM.
         Args:
             client: An Algorand client.

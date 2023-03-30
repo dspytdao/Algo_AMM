@@ -40,6 +40,8 @@ Once the event has occurred the price for one token should resolve to 1, while 0
 
 Liquidity Shares and Voting Shares can only be released after the creator of the contract moderated the outcome.
 
+As a prediction market maker on Algorand, our primary role would be to provide liquidity to users who are looking to buy and sell prediction market tokens on the platform. This involves creating markets for events or outcomes, such as the winner of a political election or the outcome of a sports game, and setting prices for these tokens based on supply and demand.
+
 ## Requirements
 
 1. [Vscode](https://code.visualstudio.com/) or another IDE

@@ -1,6 +1,7 @@
-""" algod client"""
+"""algod client"""
 from algosdk.v2client import algod
 from algosdk.future import transaction
+
 
 class AlgoClient:
     """ algod client """
@@ -8,35 +9,38 @@ class AlgoClient:
 
     def __init__(self, algod_token):
         self.algod_token = algod_token
-        self.headers =  {
+        self.headers = {
             "X-API-Key": algod_token,
         }
-        self.client = algod.AlgodClient(self.algod_token, self.ALGOD_ADDRESS, self.headers)
+        self.client = algod.AlgodClient(
+            self.algod_token, self.ALGOD_ADDRESS, self.headers)
         self.params = self.client.suggested_params()
 
-    def wait_for_confirmation(self, txid):
+    def wait_for_confirmation(self, tx_id):
         """util to monitor confirmation"""
         last_round = self.client.status().get("last-round")
-        txinfo = self.client.pending_transaction_info(txid)
-        while not (txinfo.get("confirmed-round") and txinfo.get("confirmed-round") > 0):
+        tx_info = self.client.pending_transaction_info(tx_id)
+        while not (tx_info.get("confirmed-round") and tx_info.get("confirmed-round") > 0):
             print("Waiting for confirmation...")
             last_round += 1
             self.client.status_after_block(last_round)
-            txinfo = self.client.pending_transaction_info(txid)
-        confirmed_round=txinfo.get("confirmed-round")
-        print(f"Transaction {txid} confirmed in round {confirmed_round}.")
-        return txinfo
+            tx_info = self.client.pending_transaction_info(tx_id)
+        confirmed_round = tx_info.get("confirmed-round")
+        print(f"Transaction {tx_id} confirmed in round {confirmed_round}.")
+        return tx_info
 
     def create_asset(self, account):
         """create asset"""
         sender = account.public_key
 
+
+####
         txn = transaction.AssetConfigTxn(
             sender=sender,
             sp=self.params,
             total=1_000_000_000,
             default_frozen=False,
-            unit_name="Copio",
+            unit_name="AlgoAMM",
             asset_name="coin",
             manager=sender,
             reserve=sender,
@@ -47,15 +51,15 @@ class AlgoClient:
             decimals=0)
 
         # Sign with secret key of creator
-        stxn = txn.sign(account.private_key)
+        signed_txn = txn.sign(account.private_key)
 
         # Send the transaction to the network and retrieve the tx id.
 
-        txid = self.client.send_transaction(stxn)
-        print(f"Signed transaction with txID: {txid}")
+        tx_id = self.client.send_transaction(signed_txn)
+        print(f"Signed transaction with txID: {tx_id}")
         # Wait for the transaction to be confirmed
-        response = self.wait_for_confirmation(txid)
-        print("TX ID: ", txid)
+        response = self.wait_for_confirmation(tx_id)
+        print("TX ID: ", tx_id)
         confirmed_round = response['confirmed-round']
         print(f"Result confirmed in round: {confirmed_round}")
         return response['asset-index']

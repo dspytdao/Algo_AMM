@@ -9,6 +9,7 @@ from amm.utils.purestake_client import AlgoClient
 
 load_dotenv()
 
+
 class TestAmm(TestCase):
     """Class for testing lifecycle of the amm"""
 
@@ -21,12 +22,14 @@ class TestAmm(TestCase):
     def test_is_client(self):
         """tests environment variables and client"""
         assert isinstance(self.algod_token, str),  "Provide Algorand node key"
-        assert isinstance(self.deployer.private_key, str),  "Provide deployer private key"
+        assert isinstance(self.deployer.private_key,
+                          str),  "Provide deployer private key"
 
     def test_create_amm(self):
         """tests amm"""
         stable_token = self.algo_client.create_asset(self.deployer)
-        assert isinstance(stable_token, int), "Provide sufficient algo to deployer"
+        assert isinstance(
+            stable_token, int), "Provide sufficient algo to deployer"
         app_id = self.app.create_amm_app(
             token=stable_token,
             min_increment=1000,
@@ -77,14 +80,14 @@ class TestAmm(TestCase):
         yes_token_amount = 83_333
 
         self.app.redeem(
-            token_in = yes_token,
-            token_amount = yes_token_amount,
-            withdrawal_account = self.deployer,
-            token_out = stable_token
+            token_in=yes_token,
+            token_amount=yes_token_amount,
+            withdrawal_account=self.deployer,
+            token_out=stable_token
         )
 
         self.app.withdraw(
-            pool_token_amount = pool_token_amount, withdrawal_account = self.deployer
+            pool_token_amount=pool_token_amount, withdrawal_account=self.deployer
         )
 
         self.app.close_amm(

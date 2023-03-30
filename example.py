@@ -33,7 +33,8 @@ poolToken = Tokens['pool_token_key']
 yesToken = Tokens['yes_token_key']
 noToken = Tokens['no_token_key']
 
-print(Tokens['pool_token_key'], Tokens['yes_token_key'], Tokens['no_token_key'])
+print(Tokens['pool_token_key'],
+      Tokens['yes_token_key'], Tokens['no_token_key'])
 
 app.opt_in_to_pool_token(deployer)
 app.opt_in_to_yes_token(deployer)
@@ -68,7 +69,7 @@ app.swap(
     supplier=deployer
 )
 
-#buy no token
+# buy no token
 app.swap(
     option="no",
     quantity=YES_TOKEN_AMOUNT,
@@ -87,10 +88,10 @@ print("Redeeming")
 YES_TOKENS_AMOUNT = 83_333
 
 app.redeem(
-    token_in = yesToken,
-    token_amount = YES_TOKENS_AMOUNT,
-    withdrawal_account = deployer,
-    token_out = token
+    token_in=yesToken,
+    token_amount=YES_TOKENS_AMOUNT,
+    withdrawal_account=deployer,
+    token_out=token
 )
 
 print("Withdrawing")
@@ -98,7 +99,7 @@ print("Withdrawing")
 ALL_TOKENS = 2_000_000
 
 app.withdraw(
-    pool_token_amount = ALL_TOKENS, withdrawal_account = deployer
+    pool_token_amount=ALL_TOKENS, withdrawal_account=deployer
 )
 
 print("Deleting")
