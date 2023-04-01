@@ -92,4 +92,5 @@ In `amm.py` we keep the high-level logic of the contract, `helpers.py` contains 
 ## More Information about Dspyt
 
 [Dspyt Homepage](https://dspyt.com)
+
 [Dspyt GitHub DAO Page](https://github.com/dspytdao)
