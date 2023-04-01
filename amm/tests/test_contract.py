@@ -4,7 +4,6 @@ import os
 from base64 import b64decode
 from dotenv import load_dotenv
 
-
 from amm.amm_app import App
 from amm.utils.account import Account
 from amm.utils.purestake_client import AlgoClient

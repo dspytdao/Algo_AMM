@@ -1,5 +1,4 @@
-"""generate an account"""
-
+"""generates an account and saves into .env file"""
 from algosdk import account
 
 private_key, address = account.generate_account()
@@ -13,7 +12,7 @@ with open(FILENAME, "r", encoding="utf8") as file:
 
 string_list[0] = f'key="{private_key}"\n'
 
-with open(FILENAME, "w", encoding="utf8"):
+with open(FILENAME, "w", encoding="utf8") as file:
     NEW_FILE = "".join(string_list)
     file.write(NEW_FILE)
     file.close()
