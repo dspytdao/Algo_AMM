@@ -1,4 +1,4 @@
-""" for pip package publishing"""
+"""pip package publishing"""
 import setuptools
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="algo_amm",
-    version="0.0.1",
+    version="0.0.2",
     author="pfedprog",
     author_email="pfedprog@gmail.com",
     description="Automated Prediction Market Maker on Algorand",
