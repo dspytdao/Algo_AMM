@@ -56,12 +56,9 @@ def get_contracts(client: AlgodClient) -> Tuple[bytes, bytes]:
 
 class App:
     """ Algorand App """
-    # pylint: disable=too-many-instance-attributes
-    # Eight is reasonable in this case.
 
     def __init__(self, client: AlgodClient, app_id=0):
         self.client = client
-        self.suggested_params = client.suggested_params()
         self.app_id = app_id
         self.app_addr = get_application_address(app_id)
         self.stable_token: int
@@ -172,7 +169,7 @@ class App:
             sender=funder.public_key,
             receiver=self.app_addr,
             amt=MIN_BALANCE_REQUIREMENT,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         setup_tx = ApplicationCallTxn(
@@ -181,7 +178,7 @@ class App:
             on_complete=OnComplete.NoOpOC,
             app_args=[b"setup"],
             foreign_assets=[self.stable_token],
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         assign_group_id([fund_app_tx, setup_tx])
@@ -221,7 +218,7 @@ class App:
         """
 
         opt_in_tx = AssetOptInTxn(
-            sender=account.public_key, index=self.pool_token, sp=self.suggested_params
+            sender=account.public_key, index=self.pool_token, sp=self.client.suggested_params()
         )
 
         signed_opt_in_tx = opt_in_tx.sign(account.private_key)
@@ -240,7 +237,7 @@ class App:
         """
 
         opt_in_tx = AssetOptInTxn(
-            sender=account.public_key, index=self.no_token, sp=self.suggested_params
+            sender=account.public_key, index=self.no_token, sp=self.client.suggested_params()
         )
 
         signed_opt_in_tx = opt_in_tx.sign(account.private_key)
@@ -259,7 +256,7 @@ class App:
         """
 
         opt_in_tx = AssetOptInTxn(
-            sender=account.public_key, index=self.yes_token, sp=self.suggested_params
+            sender=account.public_key, index=self.yes_token, sp=self.client.suggested_params()
         )
 
         signed_opt_in_tx = opt_in_tx.sign(account.private_key)
@@ -281,7 +278,7 @@ class App:
             sender=supplier.public_key,
             receiver=self.app_addr,
             amt=MIN_BALANCE_REQUIREMENT,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         token_tx = AssetTransferTxn(
@@ -289,7 +286,7 @@ class App:
             receiver=self.app_addr,
             index=self.stable_token,
             amt=quantity,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         app_call_tx = ApplicationCallTxn(
@@ -299,7 +296,7 @@ class App:
             app_args=[b"supply"],
             foreign_assets=[self.stable_token, self.pool_token,
                             self.yes_token, self.no_token],
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         assign_group_id([fee_tx, token_tx, app_call_tx])
@@ -333,7 +330,7 @@ class App:
             sender=supplier.public_key,
             receiver=self.app_addr,
             amt=2_000,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         token_tx = AssetTransferTxn(
@@ -341,7 +338,7 @@ class App:
             receiver=self.app_addr,
             index=self.stable_token,
             amt=quantity,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         app_call_tx = ApplicationCallTxn(
@@ -351,7 +348,7 @@ class App:
             app_args=[b"swap", second_argument],
             foreign_assets=[self.stable_token, self.pool_token,
                             self.yes_token, self.no_token],
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         assign_group_id([fee_tx, token_tx, app_call_tx])
@@ -381,7 +378,7 @@ class App:
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
             amt=2_000,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         pool_token_tx = AssetTransferTxn(
@@ -389,7 +386,7 @@ class App:
             receiver=self.app_addr,
             index=self.pool_token,
             amt=pool_token_amount,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         app_call_tx = ApplicationCallTxn(
@@ -398,7 +395,7 @@ class App:
             on_complete=OnComplete.NoOpOC,
             app_args=[b"withdraw"],
             foreign_assets=[self.stable_token, self.pool_token],
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         assign_group_id([fee_tx, pool_token_tx, app_call_tx])
@@ -429,7 +426,7 @@ class App:
             sender=withdrawal_account.public_key,
             receiver=self.app_addr,
             amt=2_000,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         token_tx = AssetTransferTxn(
@@ -437,7 +434,7 @@ class App:
             receiver=self.app_addr,
             index=token_in,
             amt=token_amount,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         app_call_tx = ApplicationCallTxn(
@@ -446,7 +443,7 @@ class App:
             on_complete=OnComplete.NoOpOC,
             app_args=[b"redeem"],
             foreign_assets=[token_out, token_in],
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         assign_group_id([fee_tx, token_tx, app_call_tx])
@@ -474,7 +471,7 @@ class App:
             sender=funder.public_key,
             receiver=self.app_addr,
             amt=2_000,
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         call_tx = ApplicationCallTxn(
@@ -482,7 +479,7 @@ class App:
             index=self.app_id,
             on_complete=OnComplete.NoOpOC,
             app_args=[b"result", second_argument],
-            sp=self.suggested_params,
+            sp=self.client.suggested_params(),
         )
 
         assign_group_id([fee_tx, call_tx])
