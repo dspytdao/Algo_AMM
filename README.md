@@ -14,13 +14,17 @@ The goal is, by harnessing the power of free markets to aggregate collective kno
 
 [Project Slides Deck](https://docs.google.com/presentation/d/1FBchISurC6Fsy-iEkmQ4gggEs7i6D4pRHab8gwOEyqk/)
 
-We wrote contract for Prediction Market Constant Function Automated Market Maker with the help of `PyTeal` and `Py-algorand-sdk`.
+## Technical Stack
 
-The front end application is written with react and vite.
+We wrote contract for Algo AMM with the help of `PyTeal` and `Py-algorand-sdk`.
 
-[The repository for the front-end](https://github.com/dspytdao/algo-amm-frontend)
+### The front end
 
-[AlgoAMM Live](https://algoamm.com)
+[`react` and `vite` front-end](https://github.com/dspytdao/algo-amm-frontend)
+
+[`react` and `nextjs front-end](https://github.com/Pfed-prog/AlgoAMMNext)
+
+[Algo AMM Live](https://algoamm.com)
 
 ## Founders
 
@@ -30,7 +34,7 @@ Grigore Gabriel Trifan: [LinkedIn](https://www.linkedin.com/in/grigore-trifan-66
 
 ## Overview
 
-Constant Function Automated Market Maker (AMM) contract provides configuration options and creates a market for an event that has a binary outcome.
+Constant Function Automated Market Maker (CFAMM) contract provides configuration options and creates a market for an event that has a binary outcome.
 
 Liquidity Pool provides a foundation for users to purchase and redeem spawned tokens once the event has been resolved. The Liquidity Pool supports a constant reserve ratio for stable price discovery and protection from liquidity drain. The liquidity provided allows to spawn two tokens in equal amount in 25%/25% proportion of the liquidity supplied.
 
@@ -51,7 +55,7 @@ As a prediction market maker on Algorand, our primary role would be to provide l
 5. [PyTEAL](https://pyteal.readthedocs.io/en/stable/installation.html)
 6. Algorand [Purestake node api key](https://developer.purestake.io/)
 
-## PyTeal AMM Smart Contract
+## PyTeal Algo AMM Smart Contract
 
 PyTeal contracts are written in Python using any editor of your choice. `compileProgram` method produces the TEAL code which is then compiled into bytecode and deployed to the blockchain.
 
