@@ -22,7 +22,7 @@ We wrote contract for Algo AMM with the help of `PyTeal` and `Py-algorand-sdk`.
 
 [`react` and `vite` front-end](https://github.com/dspytdao/algo-amm-frontend)
 
-[`react` and `nextjs front-end](https://github.com/Pfed-prog/AlgoAMMNext)
+[`react` and `nextjs` front-end](https://github.com/Pfed-prog/AlgoAMMNext)
 
 [Algo AMM Live](https://algoamm.com)
 
