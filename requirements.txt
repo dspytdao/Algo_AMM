@@ -16,7 +16,7 @@ jeepney==0.8.0
 keyring==24.2.0
 markdown-it-py==3.0.0
 mdurl==0.1.2
-more-itertools==9.1.0
+more-itertools==10.1.0
 msgpack==1.0.5
 mypy-extensions==1.0.0
 nose2==0.13.0
