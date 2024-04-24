@@ -19,7 +19,7 @@ mdurl==0.1.2
 more-itertools==10.1.0
 msgpack==1.0.5
 mypy-extensions==1.0.0
-nose2==0.13.0
+nose2==0.14.1
 packaging==23.1
 pathspec==0.12.1
 pkginfo==1.9.6
