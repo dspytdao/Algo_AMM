@@ -153,7 +153,7 @@ class App:
     def setup_amm_app(
         self,
         funder: Account
-    ) -> int:
+    ) -> dict:
         """
         Finish setting up an amm.
         This operation funds the pool account, creates pool token,
