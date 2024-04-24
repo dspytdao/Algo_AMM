@@ -25,7 +25,7 @@ pathspec==0.12.1
 pkginfo==1.9.6
 platformdirs==3.10.0
 py-algorand-sdk==2.3.0
-pycodestyle==2.11.0
+pycodestyle==2.11.1
 pycparser==2.21
 pycryptodomex==3.18.0
 Pygments==2.15.1
