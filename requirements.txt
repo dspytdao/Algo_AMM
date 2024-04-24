@@ -32,7 +32,7 @@ Pygments==2.15.1
 PyNaCl==1.5.0
 pyteal==0.25.0
 python-dotenv==1.0.0
-readme-renderer==40.0
+readme-renderer==43.0
 requests==2.31.0
 requests-toolbelt==1.0.0
 rfc3986==2.0.0
