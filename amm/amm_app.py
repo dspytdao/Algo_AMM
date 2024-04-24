@@ -95,8 +95,6 @@ class App:
             if pending_txn["pool-error"]:
                 raise RuntimeError("Pool error:")
 
-            last_status = self.client.status_after_block(last_round + 1)
-
             last_round += 1
 
         raise RuntimeError(
