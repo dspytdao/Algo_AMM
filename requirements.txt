@@ -6,7 +6,7 @@ charset-normalizer==3.3.2
 click==8.1.6
 commonmark==0.9.1
 cryptography==41.0.1
-docstring-parser==0.14.1
+docstring-parser==0.16
 docutils==0.20.1
 executing==1.2.0
 idna==3.4
